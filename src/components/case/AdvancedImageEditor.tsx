@@ -11,10 +11,7 @@ interface AdvancedImageEditorProps {
 const AdvancedImageEditor = ({ element, onUpdate }: AdvancedImageEditorProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localElement, setLocalElement] = useState<ImageElement>(element);
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     
     // Initialize localElement with proper structure for fill properties
     const initialElement = {
@@ -35,9 +32,6 @@ const AdvancedImageEditor = ({ element, onUpdate }: AdvancedImageEditorProps) =>
     setLocalElement(initialElement);
   }, [element]);
 
-  if (!mounted) {
-    return <div style={{ height: '250px', backgroundColor: '#f5f5f5', borderRadius: '8px' }} />;
-  }
 
   const handleSave = () => {
     console.log('=== AdvancedImageEditor: handleSave clicked ===');

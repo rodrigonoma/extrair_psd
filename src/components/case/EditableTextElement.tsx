@@ -13,15 +13,6 @@ const EditableTextElement = ({ element, onUpdate }: EditableTextElementProps) =>
   const [localText, setLocalText] = useState(element.text);
   const [localFontSize, setLocalFontSize] = useState(element.fontSize);
   const [localColor, setLocalColor] = useState(element.color);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div style={{ height: '200px', backgroundColor: '#f5f5f5', borderRadius: '8px' }} />;
-  }
 
   const handleSave = () => {
     onUpdate(element.id, {

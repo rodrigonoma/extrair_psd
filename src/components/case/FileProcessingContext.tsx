@@ -742,7 +742,7 @@ const FileProcessingContextProvider = ({
         document.fonts.add(loadedFont);
         
         console.log(`✅ Successfully loaded font: ${font.cssName}`);
-        return { ...font, loaded: true };
+        return { ...font, loaded: true, fontFace: loadedFont };
       } catch (error) {
         console.log(`❌ Failed to load font ${font.cssName}:`, error.message);
         return { ...font, loaded: false };
@@ -755,6 +755,39 @@ const FileProcessingContextProvider = ({
     
     // Wait a bit for fonts to be fully available
     await new Promise(resolve => setTimeout(resolve, 200));
+    
+    return fontResults.filter(f => f.loaded);
+  };
+
+  // Skip font registration for now to avoid interference
+  const registerFontsInEngine = async (engine: any, loadedFonts: any[]) => {
+    console.log('🔧 Fonts are loaded in document.fonts for UI display');
+    console.log('✅ Font registration skipped to preserve UI functionality');
+  };
+
+  // Helper function to map font names to file names
+  const getFontFileName = (fontName: string): string => {
+    const fontFileMap: { [key: string]: string } = {
+      'Aviano Sans Thin': 'Avianos Sans Thin.otf',
+      'Aviano Sans Bold': 'Aviano Sans Bold.otf',
+      'Aviano Sans Light': 'Avianos Sans Light.otf',
+      'Aviano Sans Black': 'Avianos Sans Black.otf',
+      'Inter 28pt': 'Inter 28pt.ttf',
+      'Inter 24pt': 'Inter_24pt-Regular.ttf',
+      'Inter 24pt Bold': 'Inter_24pt-Bold.ttf',
+      'Inter 24pt Light': 'Inter_24pt-Light.ttf',
+      'Inter 28pt Bold': 'Inter_28pt-Bold.ttf',
+      'BebasNeue Regular': 'BebasNeue Regular.otf',
+      'BebasNeue Bold': 'BebasNeue Bold.otf',
+      'BebasNeue Light': 'BebasNeue Light.otf',
+      'BebasNeue Thin': 'BebasNeue Thin.otf',
+      'BebasNeue Book': 'BebasNeue Book.otf',
+      'Montserrat Regular': 'Montserrat-Regular.ttf',
+      'Montserrat Bold': 'Montserrat-Bold.ttf',
+      'Montserrat Light': 'Montserrat-Light.ttf'
+    };
+    
+    return fontFileMap[fontName] || `${fontName}.otf`;
   };
 
   // Helper function to check if a graphic block has shape properties
@@ -831,14 +864,18 @@ const FileProcessingContextProvider = ({
       'Helvetica': 'Inter',
       'Times': 'Source Serif 4',
       'Arial': 'Open Sans',
-      // Aviano font family - now use loaded local fonts
+      // Aviano font family - map to loaded font names
       'AvianoSansThin': 'Aviano Sans Thin',
       'AvianoSansBold': 'Aviano Sans Bold',
-      'AvianoSans': 'Aviano Sans Regular',
+      'AvianoSans': 'Aviano Sans Light',
+      'AvianoSansLight': 'Aviano Sans Light',
+      'AvianoSansBlack': 'Aviano Sans Black',
       'Aviano Sans Thin': 'Aviano Sans Thin',
-      'Aviano Sans Bold': 'Aviano Sans Bold',
+      'Aviano Sans Bold': 'Aviano Sans Bold', 
       'Aviano Sans Light': 'Aviano Sans Light',
       'Aviano Sans Black': 'Aviano Sans Black',
+      'Aviano Sans Regular': 'Aviano Sans Light',
+      'Aviano Sans': 'Aviano Sans Light', // Default to light variant
       // Inter variants - use loaded local fonts
       'Inter28pt': 'Inter 28pt',
       'Inter': 'Inter',
@@ -868,11 +905,29 @@ const FileProcessingContextProvider = ({
     
     console.log('Found missing fonts:', Array.from(missingFonts));
     
+    // Debug: List all available fonts in the engine
+    try {
+      const availableTypes = engine.asset.findAllSources();
+      console.log('🔍 Available asset sources in engine:', availableTypes);
+      
+      // Try to get typeface assets specifically
+      if (availableTypes.includes('ly.img.typeface')) {
+        const typefaceAssets = engine.asset.findAssets('ly.img.typeface');
+        console.log('🔍 Available typeface assets:', typefaceAssets.length);
+        typefaceAssets.slice(0, 10).forEach(asset => {
+          const meta = engine.asset.getMeta(asset);
+          console.log(`  - Typeface: ${asset} | Meta:`, meta);
+        });
+      }
+    } catch (e) {
+      console.log('Could not list available fonts:', e);
+    }
+    
     // Find and replace fonts in all text blocks
     const pages = engine.scene.getPages();
     console.log('Processing pages for font replacement:', pages);
     
-    const replaceTextFonts = (blockId: number) => {
+    const replaceTextFonts = async (blockId: number) => {
       try {
         const blockType = engine.block.getType(blockId);
         console.log(`Checking block ${blockId} with type: ${blockType}`);
@@ -884,36 +939,89 @@ const FileProcessingContextProvider = ({
             const currentFont = engine.block.getString(blockId, 'text/typeface');
             console.log(`Block ${blockId} current font: "${currentFont}"`);
             
+            // Get the text content to help match with missing font warnings
+            const blockText = engine.block.getString(blockId, 'text/text') || '';
+            console.log(`Block ${blockId} text content: "${blockText.substring(0, 30)}..."`);
+            
             // Check if this font needs replacement using fuzzy matching
             let needsReplacement = false;
             let matchedMissingFont = null;
             let replacement = null;
             
-            // Direct match first
-            if (missingFonts.has(currentFont)) {
-              needsReplacement = true;
-              matchedMissingFont = currentFont;
-              replacement = fontReplacements[currentFont] || 'Open Sans';
-            } else {
-              // Fuzzy matching: check if any missing font contains this font name or vice versa
+            // If font is empty or Open Sans, try to match by text content with warnings
+            if (currentFont === '' || currentFont === 'Open Sans') {
+              console.log(`Block ${blockId} has empty/default font, searching for original by text content...`);
+              
+              // Find missing font by matching text content
               for (const missingFont of missingFonts) {
-                if (missingFont.includes(currentFont) || currentFont.includes(missingFont) || 
-                    missingFont.toLowerCase().replace(/\d+pt|bold|thin|light|medium/g, '').trim() === 
-                    currentFont.toLowerCase().replace(/\d+pt|bold|thin|light|medium/g, '').trim()) {
-                  needsReplacement = true;
-                  matchedMissingFont = missingFont;
-                  replacement = fontReplacements[missingFont] || 'Open Sans';
-                  break;
+                // Check if any warning message contains this exact text
+                const matchingWarning = messages
+                  .filter(m => m.type === 'warning')
+                  .find(warning => {
+                    const textMatch = warning.message.match(/text: '([^']+)'/);
+                    const fontMatch = warning.message.match(/font family '([^']+)'/);
+                    return textMatch && fontMatch && 
+                           (textMatch[1] === blockText || blockText.includes(textMatch[1]) || textMatch[1].includes(blockText));
+                  });
+                
+                if (matchingWarning) {
+                  const fontMatch = matchingWarning.message.match(/font family '([^']+)'/);
+                  if (fontMatch) {
+                    needsReplacement = true;
+                    matchedMissingFont = fontMatch[1];
+                    replacement = fontReplacements[fontMatch[1]] || fontMatch[1];
+                    console.log(`🎯 Found font by text matching: "${blockText}" -> "${fontMatch[1]}" -> "${replacement}"`);
+                    break;
+                  }
                 }
               }
             }
             
-            if (needsReplacement && currentFont !== '') {
+            // If still no match, try original logic
+            if (!needsReplacement) {
+              // Direct match first
+              if (missingFonts.has(currentFont)) {
+                needsReplacement = true;
+                matchedMissingFont = currentFont;
+                replacement = fontReplacements[currentFont] || currentFont;
+              } else {
+                // Fuzzy matching: check if any missing font contains this font name or vice versa
+                for (const missingFont of missingFonts) {
+                  if (missingFont.includes(currentFont) || currentFont.includes(missingFont) || 
+                      missingFont.toLowerCase().replace(/\d+pt|bold|thin|light|medium/g, '').trim() === 
+                      currentFont.toLowerCase().replace(/\d+pt|bold|thin|light|medium/g, '').trim()) {
+                    needsReplacement = true;
+                    matchedMissingFont = missingFont;
+                    replacement = fontReplacements[missingFont] || currentFont;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            if (needsReplacement && replacement && (currentFont === '' || currentFont !== replacement)) {
               console.log(`🔄 Replacing font "${currentFont}" (matched missing: "${matchedMissingFont}") with "${replacement}" in block ${blockId}`);
               
-              // Try to set the replacement font using the correct property
-              engine.block.setString(blockId, 'text/typeface', replacement);
-              console.log(`✅ Successfully replaced font in block ${blockId}`);
+              try {
+                // Try to set the replacement font using the correct property
+                try {
+                  engine.block.setString(blockId, 'text/typeface', replacement);
+                  console.log(`✅ Successfully set typeface "${replacement}" in block ${blockId}`);
+                  
+                  // Verify the font was actually set
+                  const verifyFont = engine.block.getString(blockId, 'text/typeface');
+                  console.log(`🔍 Verification: Block ${blockId} now has font: "${verifyFont}"`);
+                  
+                  if (verifyFont !== replacement) {
+                    console.log(`⚠️ WARNING: Font verification failed! Expected "${replacement}" but got "${verifyFont}"`);
+                  }
+                } catch (typefaceError) {
+                  console.log(`❌ Failed to set typeface "${replacement}" for block ${blockId}:`, typefaceError.message);
+                }
+                
+              } catch (error) {
+                console.log(`❌ All font setting methods failed for block ${blockId}:`, error);
+              }
             } else if (currentFont === '') {
               console.log(`Block ${blockId} has empty font, checking if we should set a default...`);
               // For empty fonts, set a default Google Font
@@ -936,7 +1044,9 @@ const FileProcessingContextProvider = ({
         // Process children
         try {
           const children = engine.block.getChildren(blockId);
-          children.forEach((childId: number) => replaceTextFonts(childId));
+          for (const childId of children) {
+            await replaceTextFonts(childId);
+          }
         } catch (e) {
           // No children
         }
@@ -947,9 +1057,9 @@ const FileProcessingContextProvider = ({
     };
     
     // Process all pages
-    pages.forEach((pageId: number) => {
-      replaceTextFonts(pageId);
-    });
+    for (const pageId of pages) {
+      await replaceTextFonts(pageId);
+    }
     
     console.log('Font post-processing completed');
   };
@@ -989,10 +1099,33 @@ const FileProcessingContextProvider = ({
     return textElements;
   };
 
+  // Extract font information from warnings first
+  const extractFontsFromWarnings = (messages: any[]) => {
+    console.log('Extracting original font names from warnings...');
+    const fontMap = new Map<string, string>(); // text -> originalFont mapping
+    
+    messages
+      .filter((m) => m.type === 'warning')
+      .forEach(warning => {
+        if (warning.message.includes("Could not find a typeface")) {
+          const fontMatch = warning.message.match(/font family '([^']+)'/);
+          const textMatch = warning.message.match(/text: '([^']+)'/);
+          
+          if (fontMatch && textMatch) {
+            fontMap.set(textMatch[1], fontMatch[1]);
+            console.log(`📝 Found original font mapping: "${textMatch[1]}" -> "${fontMatch[1]}"`);
+          }
+        }
+      });
+      
+    return fontMap;
+  };
+
   // Extract real text elements from the scene
-  const extractRealTextElements = (engine: any) => {
+  const extractRealTextElements = (engine: any, messages: any[]) => {
     console.log('Extracting real text elements from scene...');
     const textElements: TextElement[] = [];
+    const originalFontMap = extractFontsFromWarnings(messages);
     
     try {
       const pages = engine.scene.getPages();
@@ -1056,10 +1189,29 @@ const FileProcessingContextProvider = ({
               
               const name = engine.block.getName ? engine.block.getName(blockId) || `Text ${textElements.length + 1}` : `Text ${textElements.length + 1}`;
               
+              // Check if we have original font information from warnings
+              let finalFontFamily = fontFamily;
+              if (fontFamily === '' || fontFamily === 'Open Sans') {
+                // First try exact match
+                if (originalFontMap.has(text)) {
+                  finalFontFamily = originalFontMap.get(text)!;
+                  console.log(`🔄 Using original font "${finalFontFamily}" (exact match) instead of "${fontFamily}" for text: "${text.substring(0, 20)}..."`);
+                } else {
+                  // Try fuzzy matching - check if text contains any key from the map or vice versa
+                  for (const [mapText, mapFont] of originalFontMap.entries()) {
+                    if (text.includes(mapText) || mapText.includes(text)) {
+                      finalFontFamily = mapFont;
+                      console.log(`🔄 Using original font "${finalFontFamily}" (fuzzy match) instead of "${fontFamily}" for text: "${text.substring(0, 20)}..."`);
+                      break;
+                    }
+                  }
+                }
+              }
+              
               const textElement: TextElement = {
                 id: blockId, // Use the real block ID!
                 text,
-                fontFamily,
+                fontFamily: finalFontFamily,
                 fontSize,
                 color,
                 x,
@@ -1105,7 +1257,7 @@ const FileProcessingContextProvider = ({
     console.log('Starting full element extraction...');
     
     // Extract text elements from real scene blocks (not warnings)
-    const textElements = extractRealTextElements(engine);
+    const textElements = extractRealTextElements(engine, messages);
     
     // Extract images and shapes from scene traversal
     const imageElements: ImageElement[] = [];
@@ -1362,8 +1514,13 @@ const FileProcessingContextProvider = ({
 
       // Load local fonts from the fonts folder
       console.log('Loading local fonts from project...');
-      await loadLocalFonts(creativeEngine);
+      const loadedFonts = await loadLocalFonts(creativeEngine);
       console.log('Local fonts loaded successfully');
+      
+      // Register loaded fonts in CE.SDK asset system
+      if (loadedFonts && loadedFonts.length > 0) {
+        await registerFontsInEngine(creativeEngine, loadedFonts);
+      }
       
       // Enable system font access for CE.SDK
       console.log('Configuring font fallback system...');
@@ -1402,6 +1559,25 @@ const FileProcessingContextProvider = ({
         await postProcessFonts(creativeEngine, logger.getMessages());
       } catch (fontPostProcessError) {
         console.log('Font post-processing completed with warnings:', fontPostProcessError);
+      }
+      
+      // Force delay and refresh after font changes to ensure they're applied to preview
+      console.log('⏳ Waiting for font changes to take effect...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      try {
+        // Force refresh of all text blocks
+        const allBlocks = creativeEngine.block.findAll();
+        for (const blockId of allBlocks) {
+          const blockType = creativeEngine.block.getType(blockId);
+          if (blockType && blockType.includes('text')) {
+            creativeEngine.block.setVisible(blockId, false);
+            creativeEngine.block.setVisible(blockId, true);
+          }
+        }
+        console.log('✓ Forced refresh of all text blocks for preview');
+      } catch (e) {
+        console.log('Text block refresh not available, continuing...');
       }
       
       // Extract all elements from the scene
@@ -1674,6 +1850,15 @@ const FileProcessingContextProvider = ({
       }
       
       console.log('Text block updated successfully');
+      
+      // Force the block to refresh/re-render
+      try {
+        engine.block.setVisible(id, false);
+        engine.block.setVisible(id, true);
+        console.log('✓ Forced block refresh for ID:', id);
+      } catch (e) {
+        console.log('Block refresh not available, continuing...');
+      }
     } catch (error) {
       console.error('Error updating text block:', error);
     }
@@ -2016,8 +2201,17 @@ const FileProcessingContextProvider = ({
       const pageId = pages[0];
       console.log('Exporting page:', pageId);
       
-      // Force a small delay to ensure all changes are applied
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Force a longer delay to ensure all changes are applied
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force engine to update/refresh the scene
+      try {
+        engine.editor.setSettingBool('page/title/show', false);
+        engine.editor.setSettingBool('page/title/show', true);
+        console.log('✓ Forced engine refresh');
+      } catch (e) {
+        console.log('Engine refresh not available, continuing...');
+      }
       
       const imageBlob = await engine.block.export(pageId, {
         mimeType: 'image/png',

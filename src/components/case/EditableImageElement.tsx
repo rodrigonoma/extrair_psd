@@ -9,15 +9,6 @@ interface EditableImageElementProps {
 }
 
 const EditableImageElement = ({ element, onUpdate }: EditableImageElementProps) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div style={{ height: '120px', backgroundColor: '#f5f5f5', borderRadius: '8px' }} />;
-  }
 
   return (
     <div style={{

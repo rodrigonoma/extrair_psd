@@ -13,15 +13,6 @@ const EditableShapeElement = ({ element, onUpdate }: EditableShapeElementProps) 
   const [localFillColor, setLocalFillColor] = useState(element.fillColor || '#ff0000');
   const [localStrokeColor, setLocalStrokeColor] = useState(element.strokeColor || '#000000');
   const [localStrokeWidth, setLocalStrokeWidth] = useState(element.strokeWidth || 1);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return <div style={{ height: '150px', backgroundColor: '#f5f5f5', borderRadius: '8px' }} />;
-  }
 
   const handleSave = () => {
     onUpdate(element.id, {

@@ -11,16 +11,9 @@ interface AdvancedTextEditorProps {
 const AdvancedTextEditor = ({ element, onUpdate }: AdvancedTextEditorProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localElement, setLocalElement] = useState<TextElement>(element);
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     setLocalElement(element);
   }, [element]);
-
-  if (!mounted) {
-    return <div style={{ height: '300px', backgroundColor: '#f5f5f5', borderRadius: '8px' }} />;
-  }
 
   const handleSave = () => {
     console.log('=== AdvancedTextEditor: handleSave clicked ===');

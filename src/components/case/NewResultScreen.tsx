@@ -25,13 +25,7 @@ function NewResultScreen() {
 
   const [activeTab, setActiveTab] = useState<'preview' | 'text' | 'images' | 'shapes'>('preview');
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!result || !mounted) return null;
+  if (!result) return null;
 
   const { messages } = result;
   const warnings = messages
