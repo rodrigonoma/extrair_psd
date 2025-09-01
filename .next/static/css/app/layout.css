@@ -1,0 +1,952 @@
+/*!*******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/button.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************/
+/* BUTTON SMALL */
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3125rem 0.75rem 0.3125rem 1rem;
+  border-radius: 8px;
+  font-family: var(--font-family-ibm-sans);
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.75rem;
+  text-align: center;
+  gap: 0.375rem;
+}
+
+.button--small {
+  padding: 0.3125rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  gap: 0;
+}
+
+.button--small>span {
+  display: flex;
+  padding: 0rem 0.25rem;
+}
+
+.button.button--small>svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.button>svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.button--primary {
+  color: var(--text-light-high-emphasis);
+  border: 1px solid var(--ci-border-primary, rgba(71, 26, 255, 0.30));
+  background: var(--ci-button-primary, linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.00) 100%), #471AFF);
+}
+
+.button--primary:hover:not(:disabled),
+.button--primary:focus:not(:disabled) {
+  border-radius: 0.5rem;
+  border: 1px solid var(--ci-border-black, rgba(22, 22, 23, 0.30));
+  background: var(--ci-button-primary-hover, linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.00) 100%), #471AFF);
+}
+
+.button--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button--primary:focus-visible {
+  outline: 3px solid var(--primary-color);
+}
+
+.button--secondary {
+  border: 1px solid var(--ci-border-black-light, rgba(22, 22, 23, 0.16));
+  background: var(--ci-button-secondary-default, linear-gradient(180deg, rgba(255, 255, 255, 0.30) 0%, rgba(219, 222, 224, 0.30) 100%), rgba(255, 255, 255, 0.60));
+}
+
+.button--secondary:hover,
+.button--secondary:focus {
+  border: 1px solid var(--ci-border-black-light, rgba(22, 22, 23, 0.16));
+  background: var(--ci-button-secondary-hover, linear-gradient(180deg, rgba(255, 255, 255, 0.60) 0%, rgba(219, 222, 224, 0.60) 100%), rgba(219, 222, 224, 0.60));
+}
+
+/* secondary plain */
+.button--secondary-plain {
+  background-color: transparent;
+}
+
+.button--secondary-plain:hover,
+.button--secondary-plain:focus {
+  border-radius: 0.5rem;
+  background: var(--ci-button-tertiary-hover, linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.00) 100%), rgba(22, 22, 23, 0.12));
+}
+/*!*****************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/ci-v11-variables.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************************/
+/* IMG.LY CI v1.1 CSS Variables */
+:root {
+  /* Colors */
+  /* ci Interactive */
+  --ci-interactive-default: rgba(22, 22, 23, 0.08);
+
+  /* CI Accent */
+  --ci-accent-primary: #471aff;
+  --ci-accent-primary-alternative: #00ffb7;
+  --ci-accent-ce-sdk: #ad00ff;
+  --ci-accent-ve-sdk: #f20c5f;
+  --ci-accent-pe-sdk: #ff5c00;
+  --ci-accent-gradient: linear-gradient(
+    90deg,
+    #471aff 0%,
+    #ad00ff 44.93%,
+    #f20c5f 71.27%,
+    #ff5c00 99.15%
+  );
+
+  /* CI Surface */
+  --ci-surface-elevation-1: #f4f4f4;
+
+  /* CI Foreground */
+  --ci-foreground-black-default: #161617;
+  --ci-foreground-black-light: rgba(22, 22, 23, 0.65);
+  --ci-foreground-black-lighter: rgba(22, 22, 23, 0.25);
+  --ci-foreground-white-default: #ffffff;
+  --ci-foreground-white-light: rgba(255, 255, 255, 0.65);
+  --ci-foreground-white-lighter: rgba(255, 255, 255, 0.25);
+
+  /* CI Border */
+  --ci-border-primary: rgba(71, 26, 255, 0.3);
+  --ci-border-black: rgba(22, 22, 23, 0.3);
+  --ci-border-black-light: rgba(22, 22, 23, 0.08);
+  --ci-border-white: rgba(255, 255, 255, 0.3);
+}
+
+/*!**********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/css-reset.css ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************/
+/* stylelint-disable */
+
+html {
+  font-family: sans-serif;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  height: 100%;
+}
+body {
+  font-feature-settings: 'kern';
+  min-height: 100%;
+  position: relative;
+}
+*,
+*::before,
+*::after {
+  border-style: solid;
+  border-width: 0;
+  box-sizing: border-box;
+}
+main {
+  display: block;
+}
+hr {
+  border-top-width: 1px;
+  box-sizing: content-box;
+  height: 0;
+  overflow: visible;
+}
+pre,
+code,
+kbd,
+samp {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--font-regular-size);
+}
+a {
+  background-color: transparent;
+  color: inherit;
+  text-decoration: inherit;
+}
+abbr[title] {
+  border-bottom: none;
+  -webkit-text-decoration: underline dotted;
+          text-decoration: underline dotted;
+  text-decoration: underline;
+  text-decoration: underline dotted;
+}
+b,
+strong {
+  font-weight: bold;
+}
+small {
+  font-size: 80%;
+}
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+sub {
+  bottom: -0.25em;
+}
+sup {
+  top: -0.5em;
+}
+img {
+  border-style: none;
+}
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  line-height: 1.15;
+  margin: 0;
+}
+button,
+input {
+  overflow: visible;
+}
+button,
+select {
+  text-transform: none;
+}
+button::-moz-focus-inner,
+[type='button']::-moz-focus-inner,
+[type='reset']::-moz-focus-inner,
+[type='submit']::-moz-focus-inner {
+  border-style: none;
+  padding: 0;
+}
+fieldset {
+  padding: 0.35em 0.75em 0.625em;
+}
+legend {
+  box-sizing: border-box;
+  color: inherit;
+  display: table;
+  max-width: 100%;
+  padding: 0;
+  white-space: normal;
+}
+progress {
+  vertical-align: baseline;
+}
+textarea {
+  overflow: auto;
+}
+[type='checkbox'],
+[type='radio'] {
+  box-sizing: border-box;
+  padding: 0;
+}
+[type='number']::-webkit-inner-spin-button,
+[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+          appearance: none !important;
+}
+input[type='number'] {
+  -webkit-appearance: textfield;
+     -moz-appearance: textfield;
+          appearance: textfield;
+}
+[type='search'] {
+  -webkit-appearance: textfield;
+     -moz-appearance: textfield;
+          appearance: textfield;
+  outline-offset: -2px;
+}
+[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none !important;
+          appearance: none !important;
+}
+::-webkit-file-upload-button {
+  -webkit-appearance: button;
+          appearance: button;
+  font: inherit;
+}
+details {
+  display: block;
+}
+summary {
+  display: list-item;
+}
+template {
+  display: none;
+}
+[hidden] {
+  display: none !important;
+}
+body,
+blockquote,
+dl,
+dd,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+hr,
+figure,
+p,
+pre {
+  margin: 0;
+}
+button {
+  background-color: transparent;
+  padding: 0;
+}
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+}
+textarea {
+  resize: vertical;
+}
+button,
+[role='button'] {
+  cursor: pointer;
+}
+button::-moz-focus-inner {
+  border: 0 !important;
+}
+table {
+  border-collapse: collapse;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+button,
+input,
+optgroup,
+select,
+textarea {
+  color: inherit;
+  line-height: inherit;
+  padding: 0;
+}
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: block;
+}
+img,
+video {
+  height: auto;
+  max-width: 100%;
+}
+[data-js-focus-visible] :focus:not([data-focus-visible-added]) {
+  box-shadow: none;
+  outline: none;
+}
+select::-ms-expand {
+  display: none;
+}
+
+*:focus {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  touch-action: manipulation;
+}
+
+/*!******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/fonts.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************/
+@font-face {
+  font-display: swap;
+  font-family: GT Walsheim Pro;
+  font-style: normal;
+  font-weight: 900;
+  src: url(/_next/static/media/GTWalsheimPro-Black.590c6354.woff) format('woff'),
+    url(/_next/static/media/GTWalsheimPro-Black.08ffe838.woff2) format('woff2'),
+    url(/_next/static/media/GTWalsheimPro-Black.dfbc79ff.ttf) format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: GT Walsheim Pro;
+  font-style: normal;
+  font-weight: 700;
+  src: url(/_next/static/media/GTWalsheimPro-Bold.b2f64223.woff) format('woff'),
+    url(/_next/static/media/GTWalsheimPro-Bold.c40c7277.woff2) format('woff2'),
+    url(/_next/static/media/GTWalsheimPro-Bold.2c750101.ttf) format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: GT Walsheim Pro;
+  font-style: normal;
+  font-weight: 800;
+  src: url(/_next/static/media/GTWalsheimPro-Black.590c6354.woff) format('woff'),
+    url(/_next/static/media/GTWalsheimPro-Black.08ffe838.woff2) format('woff2'),
+    url(/_next/static/media/GTWalsheimPro-Black.dfbc79ff.ttf) format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: IBM Plex Sans;
+  font-style: normal;
+  font-weight: 400;
+  src: url(/_next/static/media/IBMPlexSans-Regular.c7dc84d0.ttf) format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: IBM Plex Sans;
+  font-style: normal;
+  font-weight: 500;
+  src: url(/_next/static/media/IBMPlexSans-Medium.b57725b8.ttf) format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: IBM Plex Sans;
+  font-style: normal;
+  font-weight: 600;
+  src: url(/_next/static/media/IBMPlexSans-SemiBold.9617e7fa.ttf) format('truetype');
+}
+
+@font-face {
+  font-display: swap;
+  font-family: IBM Plex Sans;
+  font-style: normal;
+  font-weight: 700;
+  src: url(/_next/static/media/IBMPlexSans-Bold.efb590a6.ttf) format('truetype');
+}
+
+/*!******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/forms.css ***!
+  \******************************************************************************************************************************************************************************************************************************************************************/
+.select-wrapper {
+  position: relative;
+  min-width: 8.5rem;
+}
+
+.select-wrapper--small select {
+  padding: 3px 24px 3px 8px;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  line-height: 20px;
+}
+
+.select-wrapper::after {
+  position: absolute;
+  top: 0.8rem;
+  right: 1rem;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.3125rem;
+  background-color: black;
+  -webkit-clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+          clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+  content: '';
+  justify-self: end;
+}
+
+select {
+  width: 100%;
+
+  box-sizing: border-box;
+  padding: 3px 12px 3px 12px;
+  border: 1px solid rgba(22, 22, 23, 0.3);
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: white;
+  border-radius: 6px;
+  color: var(--ci-foreground-black-default);
+
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 24px;
+  outline: none;
+}
+
+select:hover,
+select:focus {
+  border: 1px solid rgba(22, 22, 23, 0.8);
+}
+
+select option {
+  color: #666;
+  font-weight: normal;
+}
+
+.select--placeholder {
+  color: #999;
+}
+
+select::-ms-expand {
+  display: none;
+}
+
+select:focus::-ms-value {
+  background-color: transparent;
+}
+
+input {
+  padding: 1px 12px;
+  border: 1px solid #6d7379;
+  border-radius: 6px;
+  box-shadow: inset 0px 2px 4px rgba(18, 26, 33, 0.16);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 28px;
+}
+
+input::placeholder {
+  color: #999;
+}
+
+/*!*****************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/root.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************/
+html {
+  font-size: 16px;
+
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
+}
+
+body {
+  background-color: var(--background-color);
+
+  color: var(--text-dark-high-emphasis);
+  font-family: var(--font-family-ibm-sans);
+  font-size: var(--font-regular-size);
+
+  -webkit-font-smoothing: antialiased;
+  font-weight: 400;
+
+  -webkit-hyphens: auto;
+
+          hyphens: auto;
+  line-height: 180%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+body.no-scroll {
+  overflow: hidden;
+}
+
+/* Default styles we use in almost every showcase */
+/* These styles are available in each showcase (standalone) */
+.showcaseContainer {
+  container-type: inline-size;
+}
+
+.cesdkStyle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.cesdkWrapperStyle {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  flex-grow: 1;
+  border-radius: 0.75rem;
+  box-shadow:
+    0px 0px 2px rgba(22, 22, 23, 0.25),
+    0px 4px 6px -2px rgba(22, 22, 23, 0.12),
+    0px 2px 2.5px -2px rgba(22, 22, 23, 0.12),
+    0px 1px 1.75px -2px rgba(22, 22, 23, 0.12);
+}
+
+/* if we are on desktop, add min-height and border radius */
+@container (min-width: 650px) {
+  .cesdkWrapperStyle {
+    min-height: 640px;
+  }
+}
+
+.mobile-padding-top {
+  padding-top: 0.75rem;
+}
+
+@container (min-width: 650px) {
+  .mobile-padding-top {
+    padding-top: 0;
+  }
+}
+
+/* hide hubspot chat widget on mobile */
+#hubspot-messages-iframe-container {
+  visibility: hidden;
+}
+
+@media (min-width: 650px) {
+  #hubspot-messages-iframe-container {
+    visibility: initial;
+  }
+}
+
+/*!***********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/typography.css ***!
+  \***********************************************************************************************************************************************************************************************************************************************************************/
+/* TYPOGRAPHY */
+.h1 {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-gt);
+  font-size: 60px;
+  font-weight: bold;
+
+  letter-spacing: -0.01em;
+  line-height: 68px;
+}
+
+.h2 {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-gt);
+  font-size: 2.75rem;
+  font-weight: bold;
+  letter-spacing: -0.0275rem;
+  line-height: 3.25rem;
+}
+
+.h3 {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-gt);
+  font-size: 2rem;
+  font-weight: bold;
+  line-height: 2.75rem;
+}
+
+.h4 {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-gt);
+  font-size: 22px;
+  font-weight: bold;
+
+  letter-spacing: 0.01em;
+  line-height: 32px;
+}
+
+.h5 {
+  color: var(--text-dark-high-emphasis);
+  font-family: var(--font-family-gt);
+  font-size: 18px;
+  font-weight: 700;
+
+  letter-spacing: 0.02em;
+  line-height: 24px;
+}
+
+.subheader {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-ibm-sans);
+  font-size: 16px;
+  font-weight: normal;
+
+  letter-spacing: 0.03em;
+  line-height: 24px;
+  text-transform: uppercase;
+}
+
+.paragraphBig {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-ibm-sans);
+  font-size: 22px;
+  font-weight: 500;
+  -webkit-hyphens: none;
+          hyphens: none;
+  line-height: 32px;
+}
+
+.paragraph {
+  color: var(--ci-foreground-black-default);
+  font-family: var(--font-family-ibm-sans);
+  font-size: 18px;
+  font-weight: normal;
+  -webkit-hyphens: none;
+          hyphens: none;
+  letter-spacing: 0.01em;
+  line-height: 28px;
+}
+
+.paragraphSmall {
+  color: rgba(22, 22, 23, 0.65);
+  font-family: var(--font-family-ibm-sans);
+  font-size: 14px;
+  font-weight: normal;
+  -webkit-hyphens: none;
+          hyphens: none;
+  letter-spacing: 0.02em;
+  line-height: 20px;
+}
+
+.paragraphSmall--black {
+  color: #161617;
+  font-family: var(--font-family-ibm-sans);
+  font-size: 14px;
+  font-weight: normal;
+  -webkit-hyphens: none;
+          hyphens: none;
+  letter-spacing: 0.02em;
+  line-height: 20px;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.prose {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  margin-top: 2.5rem;
+}
+
+.prose h1:first-child, .prose h2:first-child, .prose h3:first-child {
+  margin-top: 0;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  font-family: var(--font-family-gt);
+  font-size: 29px;
+  font-weight: 700;
+  line-height: 40px;
+}
+
+.prose ol, .prose ul {
+  margin-left: 1rem;
+  list-style-position: outside;
+}
+
+.prose a {
+  color: #471AFF;
+}
+
+.prose a:hover {
+  opacity: 0.8;
+}
+
+.prose b {
+  font-weight: bold;
+}
+
+.prose i {
+  font-style: italic;
+}
+/*!*****************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/util.css ***!
+  \*****************************************************************************************************************************************************************************************************************************************************************/
+/* SMALL SET OF UTILITY CLASSES FOR WRAPPERS */
+/* Using Tailwind classes / sizes */
+
+.flex {
+  display: flex;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-basis-0 {
+  flex-basis: 0;
+}
+
+.space-x-1>*+* {
+  margin-left: 0.25rem;
+}
+
+.space-x-2>*+* {
+  margin-left: 0.5rem;
+}
+
+.space-x-3>*+* {
+  margin-left: 0.75rem;
+}
+
+.space-y-1>*+* {
+  margin-top: 0.25rem;
+}
+
+.space-y-2>*+* {
+  margin-top: 0.5rem;
+}
+
+.space-y-2>*+* {
+  margin-top: 0.75rem;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.rounded {
+  border-radius: 0.75rem;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.gap-xs {
+  gap: 0.5rem;
+}
+
+.gap-sm {
+  gap: 1rem;
+}
+
+.gap-md {
+  gap: 1.5rem;
+}
+
+.gap-lg {
+  gap: 2rem;
+}
+
+/* HR */
+hr {
+  color: rgba(22, 22, 23, 0.15);
+}
+/*!**********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/variables.css ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************/
+/* From IMG.LY Gatsby Theme */
+:root {
+  --primary-color: #471aff;
+  --background-color: #fafafa;
+  --border-color: rgba(0, 0, 0, 0.5);
+  --divider-color: rgb(128, 128, 128);
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  /* button */
+  --button-primary-hover-bg: #6038ff;
+  --button-primary-shadow: 0 0.25rem 0.625rem 1px rgba(47, 18, 165, 0.25);
+  --button-primary-hover-shadow: 0 0.25rem 0.625rem 1px rgba(47, 18, 165, 0.4);
+  --button-border: none;
+  --button-high-emphasis-bg: var(--primary-color);
+  --button-secondary-bg: rgba(22, 22, 23, 0.08);
+  --button-secondary-hover-bg: rgba(22, 22, 23, 0.12);
+
+  --button-dark-bg: #161617;
+  --button-dark-shadow: 0 0.25rem 0.625rem 1px rgb(22 22 23 / 12%);
+  --button-dark-hover-bg: #5c5c5c;
+
+  --button-light-bg: #fff;
+  --button-light-shadow: 0 0.25rem 0.25rem rgba(0, 0, 0, 0.04);
+  --button-light-hover-bg: rgb(224, 224, 224);
+
+  --button-flat-opacity: 0.75;
+
+  /* breadcrumbs */
+  --breadcrumbs-opacity: 0.75;
+
+  /* block */
+  --code-bg: #fff;
+  --code-header-bg: #f4f4f4;
+  --code-border: 1px solid #c8c8c8;
+  --code-line-number-color: rgb(128, 128, 128);
+  --inline-code-border: 1px solid rgba(71, 26, 255, 0.1);
+  --inline-code-bg: #f5f2ff;
+  --code-line-highlight-color: rgba(71, 26, 255, 0.1);
+  --code-text-hover-bg: rgba(22, 22, 23, 0.12);
+  --code-max-width: 1.2;
+
+  /* text */
+  --interactive-text-indicator-hover-shadow: 0 0 0 0.125rem
+    var(--code-text-hover-bg);
+  --interactive-text-indicator-active-shadow: 0 0 0 0.125rem
+    var(--primary-color);
+  --interactive-text-indicator-border: 1px solid #c8c8c8;
+  --interactive-text-indicator-border-opacity: 0.5;
+
+  /* blockquote */
+  --blockquote-color: rgba(22, 22, 23, 0.5);
+  --blockquote-bg: #f4f4f4;
+  --blockquote-shadow: inset 2px 0 0 #c8c8c8;
+  /* text */
+  --text-light-high-emphasis: #fff;
+  --text-dark-high-emphasis: #161617;
+  /* link */
+  --link-hover-opacity: 0.5;
+  --link-active-color: #43464d;
+  /* input */
+  --input-color: #495057;
+  --input-bg: #fff;
+  --input-border: 1px solid rgba(22, 22, 23, 0.5);
+  --input-focus-shadow: 0 0 0 4px rgba(71, 26, 255, 0.5);
+  /* toggle */
+  --toggle-bg: #ccc;
+  --toggle-thumb-bg: #fff;
+
+  /* font-family */
+  --font-family-gt: GT Walsheim Pro, sans-serif;
+  --font-family-ibm-sans: IBM Plex Sans, SpockEss-Bold, sans-serif;
+}
+
+/*!**************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/app/root.css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************/
+body {
+  height: 100%;
+  background: #e7e7e9 linear-gradient(180deg, rgba(0, 0, 0, .04), transparent 10%);
+}
