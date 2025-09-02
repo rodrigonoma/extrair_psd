@@ -143,6 +143,16 @@ function extractFontMetadata(fileName: string): FontMetadata {
     baseName = nameWithoutExt.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
   }
   
+  // Corrigir inconsistências de nomes conhecidas
+  const nameCorrections: Record<string, string> = {
+    'Avianos Sans': 'Aviano Sans',  // Corrigir erro de digitação no arquivo
+    'BebasNeue': 'Bebas Neue',      // Padronizar nome
+  };
+  
+  if (nameCorrections[baseName]) {
+    baseName = nameCorrections[baseName];
+  }
+  
   return {
     name: baseName,
     fileName,

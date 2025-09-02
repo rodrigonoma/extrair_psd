@@ -370,6 +370,7 @@ interface FileProcessingContextValue {
   regenerateImage: () => Promise<void>;
   generateBatchImages: (items: Array<{[key: string]: any}>) => Promise<string[]>;
   updateFontDefinitions: (newFonts: any) => void;
+  fontDefinitions: any;
   engine: any;
 }
 
@@ -389,6 +390,7 @@ const FileProcessingContext = createContext<FileProcessingContextValue>({
   regenerateImage: async () => {},
   generateBatchImages: async () => [],
   updateFontDefinitions: () => {},
+  fontDefinitions: {},
   engine: null
 });
 
@@ -2942,8 +2944,8 @@ const FileProcessingContextProvider = ({
             if (!fontAsset) {
               console.log('🔄 Asset search failed, trying direct font application...');
               
-              // Use our font definitions directly (from the same scope)
-              const fontDefinitions = FONT_DEFINITIONS;
+              // Use our font definitions directly (from dynamic state)
+              // fontDefinitions is already in scope as state variable
               
               const directFontDef = fontDefinitions[value];
               if (directFontDef && directFontDef.fonts && directFontDef.fonts[0]) {
@@ -3192,13 +3194,58 @@ const FileProcessingContextProvider = ({
   const updateFontDefinitions = useCallback((newFonts: any) => {
     console.log('Updating font definitions with:', newFonts);
     
-    // Merge new fonts with existing ones
-    setFontDefinitions(prevFonts => {
-      const updatedFonts = { ...prevFonts, ...newFonts };
-      console.log('Updated font definitions:', updatedFonts);
-      return updatedFonts;
-    });
-  }, []);
+    // Replace all font definitions with new ones from scan
+    setFontDefinitions(newFonts);
+    console.log('Updated font definitions (replaced):', newFonts);
+    
+    // If engine is available, register new fonts in asset system
+    if (engine && engine.asset) {
+      console.log('🔧 Registering new fonts in CE.SDK...');
+      
+      Object.entries(newFonts).forEach(async ([fontName, fontDef]: [string, any]) => {
+        try {
+          const font = fontDef.fonts?.[0];
+          if (!font) return;
+          
+          // Register in local-hosted-fonts source
+          const sourceId = 'local-hosted-fonts';
+          
+          // Ensure source exists
+          try {
+            if (!engine.asset.findAllSources().includes(sourceId)) {
+              engine.asset.addLocalSource(sourceId);
+            }
+          } catch (e) {
+            console.log('Source already exists or error creating:', e.message);
+          }
+          
+          // Create asset definition
+          const assetDefinition = {
+            id: `typeface-${fontName.toLowerCase().replace(/\s+/g, '-')}`,
+            label: { en: fontName },
+            tags: ['font', 'typeface'],
+            payload: {
+              typeface: {
+                name: fontName,
+                fonts: [{
+                  uri: font.uri,
+                  style: font.style,
+                  weight: font.weight,
+                  subFamily: font.subFamily
+                }]
+              }
+            }
+          };
+          
+          engine.asset.addAssetToSource(sourceId, assetDefinition);
+          console.log('✅ Registered new font in CE.SDK:', fontName);
+          
+        } catch (error) {
+          console.error('❌ Failed to register font in CE.SDK:', fontName, error);
+        }
+      });
+    }
+  }, [engine]);
 
   return (
     <FileProcessingContext.Provider
@@ -3218,6 +3265,7 @@ const FileProcessingContextProvider = ({
         regenerateImage,
         generateBatchImages,
         updateFontDefinitions,
+        fontDefinitions,
         engine
       }}
     >

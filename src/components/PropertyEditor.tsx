@@ -1,26 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { TextElement, ImageElement, ShapeElement } from './case/FileProcessingContext';
+import { TextElement, ImageElement, ShapeElement, useFileProcessing } from './case/FileProcessingContext';
 
-// Available fonts with their CORRECT identifiers (matching the registration in loadLocalFonts)
-const availableFonts = [
-  { name: 'Aviano Sans Bold', file: 'Aviano Sans Bold.otf', family: 'Aviano Sans', identifier: 'AvianoSansBold' },
-  { name: 'Aviano Sans Black', file: 'Avianos Sans Black.otf', family: 'Aviano Sans', identifier: 'AvianoSansBlack' },
-  { name: 'Aviano Sans Light', file: 'Avianos Sans Light.otf', family: 'Aviano Sans', identifier: 'AvianoSansLight' },
-  { name: 'Aviano Sans Thin', file: 'Avianos Sans Thin.otf', family: 'Aviano Sans', identifier: 'AvianoSansThin' },
-  { name: 'Bebas Neue Bold', file: 'BebasNeue Bold.otf', family: 'Bebas Neue', identifier: 'BebasNeueBold' },
-  { name: 'Bebas Neue Book', file: 'BebasNeue Book.otf', family: 'Bebas Neue', identifier: 'BebasNeueBook' },
-  { name: 'Bebas Neue Light', file: 'BebasNeue Light.otf', family: 'Bebas Neue', identifier: 'BebasNeueLight' },
-  { name: 'Bebas Neue Regular', file: 'BebasNeue Regular.otf', family: 'Bebas Neue', identifier: 'BebasNeueRegular' },
-  { name: 'Bebas Neue Thin', file: 'BebasNeue Thin.otf', family: 'Bebas Neue', identifier: 'BebasNeueThin' },
-  { name: 'Inter 28pt', file: 'Inter 28pt.ttf', family: 'Inter', identifier: 'Inter28pt' },
-  { name: 'Inter 24pt Bold', file: 'Inter_24pt-Bold.ttf', family: 'Inter', identifier: 'Inter24ptBold' },
-  { name: 'Inter 24pt Light', file: 'Inter_24pt-Light.ttf', family: 'Inter', identifier: 'Inter24ptLight' },
-  { name: 'Inter 24pt Regular', file: 'Inter_24pt-Regular.ttf', family: 'Inter', identifier: 'Inter24pt' },
-  { name: 'Inter 28pt Bold', file: 'Inter_28pt-Bold.ttf', family: 'Inter', identifier: 'Inter28ptBold' },
-  { name: 'Montserrat Bold', file: 'Montserrat-Bold.ttf', family: 'Montserrat', identifier: 'MontserratBold' },
-  { name: 'Montserrat Light', file: 'Montserrat-Light.ttf', family: 'Montserrat', identifier: 'MontserratLight' },
-  { name: 'Montserrat Regular', file: 'Montserrat-Regular.ttf', family: 'Montserrat', identifier: 'MontserratRegular' }
-];
+// NOTE: availableFonts is now generated dynamically from fontDefinitions context
 
 interface PropertyEditorProps {
   elements: (TextElement | ImageElement | ShapeElement)[];
@@ -33,10 +14,32 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({
   onElementUpdate,
   onGenerateImage
 }) => {
+  const { fontDefinitions } = useFileProcessing();
   const [selectedElementId, setSelectedElementId] = useState<number | null>(null);
   const [searchFilter, setSearchFilter] = useState('');
   
   const selectedElement = elements.find(el => el.id === selectedElementId);
+
+  // Convert dynamic font definitions to the format expected by this component
+  const availableFonts = React.useMemo(() => {
+    if (!fontDefinitions) return [];
+    
+    return Object.entries(fontDefinitions).map(([fontName, fontDef]: [string, any]) => {
+      const font = fontDef.fonts?.[0];
+      if (!font) return null;
+      
+      // Extract file name from URI
+      const uriParts = font.uri.split('/');
+      const fileName = decodeURIComponent(uriParts[uriParts.length - 1]);
+      
+      return {
+        name: fontName,
+        file: fileName,
+        family: fontDef.name || fontName,
+        identifier: fontName.replace(/\s+/g, '')  // Simple identifier generation
+      };
+    }).filter(Boolean);
+  }, [fontDefinitions]);
   
   const filteredElements = elements.filter(element => 
     element.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
