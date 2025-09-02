@@ -1281,10 +1281,57 @@ const FileProcessingContextProvider = ({
               console.log(`🔄 Replacing font "${currentFont}" (matched missing: "${matchedMissingFont}") with "${replacement}" in block ${blockId}`);
               
               try {
-                // Try to set the replacement font using the correct property
+                // Use the same direct font application method that works for font switching
                 try {
-                  engine.block.setString(blockId, 'text/typeface', replacement);
-                  console.log(`✅ Successfully set typeface "${replacement}" in block ${blockId}`);
+                  const fontDefinitions = {
+                    'Aviano Sans Thin': {
+                      name: 'Aviano Sans Thin',
+                      fonts: [{
+                        uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Thin.otf',
+                        style: 'normal',
+                        weight: 'thin',
+                        subFamily: 'Thin'
+                      }]
+                    },
+                    'Aviano Sans Bold': {
+                      name: 'Aviano Sans Bold',
+                      fonts: [{
+                        uri: 'http://localhost:3000/fonts/Aviano%20Sans%20Bold.otf',
+                        style: 'normal',
+                        weight: 'bold',
+                        subFamily: 'Bold'
+                      }]
+                    },
+                    'Aviano Sans Light': {
+                      name: 'Aviano Sans Light',
+                      fonts: [{
+                        uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Light.otf',
+                        style: 'normal',
+                        weight: 'light',
+                        subFamily: 'Light'
+                      }]
+                    },
+                    'Aviano Sans Black': {
+                      name: 'Aviano Sans Black',
+                      fonts: [{
+                        uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Black.otf',
+                        style: 'normal',
+                        weight: 'black',
+                        subFamily: 'Black'
+                      }]
+                    }
+                  };
+                  
+                  const fontDef = fontDefinitions[replacement];
+                  if (fontDef && fontDef.fonts && fontDef.fonts[0]) {
+                    // Use the same setFont method that works for switching
+                    engine.block.setFont(blockId, fontDef.fonts[0].uri, fontDef);
+                    console.log(`✅ Applied font using setFont API for initial load: "${replacement}" in block ${blockId}`);
+                  } else {
+                    // Fallback to string method
+                    engine.block.setString(blockId, 'text/typeface', replacement);
+                    console.log(`✅ Applied font using string method for initial load: "${replacement}" in block ${blockId}`);
+                  }
                   
                   // Verify the font was actually set
                   const verifyFont = engine.block.getString(blockId, 'text/typeface');
