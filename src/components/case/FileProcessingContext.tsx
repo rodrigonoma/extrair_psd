@@ -369,6 +369,7 @@ interface FileProcessingContextValue {
   updateElement: (id: number, updates: any) => void;
   regenerateImage: () => Promise<void>;
   generateBatchImages: (items: Array<{[key: string]: any}>) => Promise<string[]>;
+  updateFontDefinitions: (newFonts: any) => void;
   engine: any;
 }
 
@@ -387,6 +388,7 @@ const FileProcessingContext = createContext<FileProcessingContextValue>({
   updateElement: () => {},
   regenerateImage: async () => {},
   generateBatchImages: async () => [],
+  updateFontDefinitions: () => {},
   engine: null
 });
 
@@ -414,6 +416,7 @@ const FileProcessingContextProvider = ({
   const [currentFile, setCurrentFile] = useState<ExampleFile | null>(null);
   const [inferenceTime, setInferenceTime] = useState(0);
   const [engine, setEngine] = useState<any>(null);
+  const [fontDefinitions, setFontDefinitions] = useState<any>(FONT_DEFINITIONS);
 
   function resetState() {
     setStatus('idle');
@@ -1440,7 +1443,7 @@ const FileProcessingContextProvider = ({
               try {
                 // Use the same direct font application method that works for font switching
                 try {
-                  const fontDefinitions = FONT_DEFINITIONS;
+                  // Use dynamic font definitions from state
                   
                   const fontDef = fontDefinitions[replacement];
                   if (fontDef && fontDef.fonts && fontDef.fonts[0]) {
@@ -1945,7 +1948,7 @@ const FileProcessingContextProvider = ({
     try {
       // Use global font definitions for asset registration
       console.log('🔧 Preparing local font definitions...');
-      const localFontDefinitions = FONT_DEFINITIONS;
+      const localFontDefinitions = fontDefinitions;
 
       creativeEngine = await CreativeEngine.init({
         license: process.env.NEXT_PUBLIC_LICENSE
@@ -3186,6 +3189,17 @@ const FileProcessingContextProvider = ({
     }
   }, [engine]);
 
+  const updateFontDefinitions = useCallback((newFonts: any) => {
+    console.log('Updating font definitions with:', newFonts);
+    
+    // Merge new fonts with existing ones
+    setFontDefinitions(prevFonts => {
+      const updatedFonts = { ...prevFonts, ...newFonts };
+      console.log('Updated font definitions:', updatedFonts);
+      return updatedFonts;
+    });
+  }, []);
+
   return (
     <FileProcessingContext.Provider
       value={{
@@ -3203,6 +3217,7 @@ const FileProcessingContextProvider = ({
         updateElement,
         regenerateImage,
         generateBatchImages,
+        updateFontDefinitions,
         engine
       }}
     >

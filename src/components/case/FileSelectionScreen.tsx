@@ -1,10 +1,19 @@
 import UploadZone from './UploadZone';
+import { FontManager } from './FontManager';
+import { useFileProcessing } from './FileProcessingContext';
 
 interface FileSelectionScreenProps {
   onFileSelected: (file: any) => void;
 }
 
 function FileSelectionScreen({ onFileSelected }: FileSelectionScreenProps) {
+  const { updateFontDefinitions } = useFileProcessing();
+
+  const handleFontsUpdated = (fonts: any) => {
+    console.log('New fonts detected in FontManager:', fonts);
+    updateFontDefinitions(fonts);
+  };
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -73,6 +82,10 @@ function FileSelectionScreen({ onFileSelected }: FileSelectionScreenProps) {
           <li style={{ marginBottom: '0.5rem' }}>🖼️ <strong>Gerar PNG</strong> - Exporte imagens com as alterações</li>
           <li>📊 <strong>Análise completa</strong> - Veja todos os elementos do PSD</li>
         </ul>
+      </div>
+      
+      <div style={{ width: '100%', maxWidth: '800px', marginTop: '1rem' }}>
+        <FontManager onFontsUpdated={handleFontsUpdated} />
       </div>
     </div>
   );
