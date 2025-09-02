@@ -31,6 +31,18 @@ function NewResultScreen() {
 
   const [activeTab, setActiveTab] = useState<'preview' | 'text' | 'images' | 'shapes' | 'properties'>('preview');
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isAiRepositioning, setIsAiRepositioning] = useState(false);
+  const [aiResponses, setAiResponses] = useState<Array<{timestamp: string, reasoning: string, prompt: string}>>([]);
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<number>>(new Set());
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [textElements, setTextElements] = useState<any[]>([]);
+  const [fixedElements, setFixedElements] = useState<Set<number>>(new Set());
+  const [processingTextId, setProcessingTextId] = useState<number | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<'baixo' | 'medio' | 'alto'>('medio');
+  const [colorPalettes, setColorPalettes] = useState<any[]>([]);
+  const [isGeneratingPalettes, setIsGeneratingPalettes] = useState(false);
+  const [selectedPaletteIndex, setSelectedPaletteIndex] = useState<number | null>(null);
+  const [isApplyingChanges, setIsApplyingChanges] = useState(false);
   if (!result) return null;
 
   const { messages } = result;
@@ -40,6 +52,328 @@ function NewResultScreen() {
   const errors = messages
     .filter((m) => m.type === 'error')
     .map((m) => m.message);
+
+  const handleAiReposition = async () => {
+    console.log('AI Modal clicked');
+    
+    // Extrair apenas elementos de texto
+    if (result.textElements && result.textElements.length > 0) {
+      setTextElements(result.textElements);
+      setShowAiModal(true);
+      showToast({ type: 'info', title: '📝 Abrindo editor de textos IA...' });
+    } else {
+      showToast({ type: 'warning', title: '⚠️ Nenhum elemento de texto encontrado no PSD.' });
+    }
+  };
+
+  const handleGenerateIndividualText = async (element: any) => {
+    console.log('Generating text for element:', element.id);
+    setProcessingTextId(element.id);
+    
+    showToast({ type: 'info', title: `🤖 Gerando novo texto para "${element.name}"...` });
+    
+    try {
+      const response = await fetch('/api/ai-generate-text', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          originalText: element.text,
+          elementId: element.id,
+          elementName: element.name
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha na chamada da API de geração de texto');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Atualizar o texto no elemento
+        updateTextElement(element.id, { text: data.generatedText });
+        
+        // Atualizar também no estado local do modal
+        setTextElements(prev => prev.map(el => 
+          el.id === element.id 
+            ? { ...el, text: data.generatedText }
+            : el
+        ));
+        
+        showToast({ 
+          type: 'success', 
+          title: `✨ Texto gerado com sucesso!\n${data.reasoning || 'Texto atualizado'}` 
+        });
+        
+      } else {
+        throw new Error(data.error || 'Erro na geração do texto');
+      }
+      
+    } catch (error) {
+      console.error('Erro na geração de texto:', error);
+      showToast({ 
+        type: 'error', 
+        title: '❌ Erro ao gerar texto. Tente novamente.' 
+      });
+    } finally {
+      setProcessingTextId(null);
+    }
+  };
+
+  const toggleFixedElement = (elementId: number) => {
+    const newFixed = new Set(fixedElements);
+    if (newFixed.has(elementId)) {
+      newFixed.delete(elementId);
+    } else {
+      newFixed.add(elementId);
+    }
+    setFixedElements(newFixed);
+  };
+
+  const generateColorPalettes = async () => {
+    console.log('Generating color palettes for profile:', selectedProfile);
+    setIsGeneratingPalettes(true);
+    
+    showToast({ type: 'info', title: `🎨 Gerando paletas de cores para padrão ${selectedProfile}...` });
+    
+    try {
+      const response = await fetch('/api/ai-color-palettes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          profile: selectedProfile
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha na chamada da API de paletas');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setColorPalettes(data.palettes);
+        setSelectedPaletteIndex(null); // Reset selection
+        showToast({ 
+          type: 'success', 
+          title: `✨ Paletas geradas com sucesso!` 
+        });
+        
+      } else {
+        throw new Error(data.error || 'Erro na geração das paletas');
+      }
+      
+    } catch (error) {
+      console.error('Erro na geração de paletas:', error);
+      showToast({ 
+        type: 'error', 
+        title: '❌ Erro ao gerar paletas. Tente novamente.' 
+      });
+    } finally {
+      setIsGeneratingPalettes(false);
+    }
+  };
+
+  const applyAiChanges = async () => {
+    console.log('Applying AI changes to PSD');
+    console.log('Current result elements:', {
+      textElements: result.textElements?.length || 0,
+      imageElements: result.imageElements?.length || 0,
+      shapeElements: result.shapeElements?.length || 0
+    });
+    
+    setIsApplyingChanges(true);
+    
+    showToast({ type: 'info', title: '🎨 Aplicando mudanças IA no PSD...' });
+    
+    try {
+      // Aplicar cores da paleta selecionada nos elementos gráficos
+      if (selectedPaletteIndex !== null && colorPalettes[selectedPaletteIndex]) {
+        const selectedPalette = colorPalettes[selectedPaletteIndex];
+        console.log('🎨 Paleta selecionada:', selectedPalette.name, selectedPalette.colors);
+        
+        let changesApplied = 0;
+        
+        // Aplicar cores em elementos de forma/shape
+        if (result.shapeElements && result.shapeElements.length > 0) {
+          console.log('🔷 Processando', result.shapeElements.length, 'elementos de forma...');
+          
+          result.shapeElements.forEach((element, index) => {
+            const colorIndex = index % selectedPalette.colors.length;
+            const newColor = selectedPalette.colors[colorIndex];
+            
+            console.log(`🔷 Elemento ${element.id} (${element.name}):`, {
+              currentBgColor: element.backgroundColor?.color,
+              newColor: newColor,
+              elementStructure: Object.keys(element)
+            });
+            
+            // Tentar diferentes formas de aplicar a cor
+            try {
+              // Método 1: Usar fillColor (conforme FileProcessingContext)
+              updateShapeElement(element.id, {
+                fillColor: newColor
+              });
+              console.log(`✅ Cor aplicada em shape via fillColor ${element.id}: ${newColor}`);
+              changesApplied++;
+              
+            } catch (error) {
+              console.error(`❌ Erro ao aplicar fillColor no shape ${element.id}:`, error);
+              
+              // Método 2: Tentar backgroundColor
+              try {
+                updateShapeElement(element.id, {
+                  backgroundColor: {
+                    enabled: true,
+                    color: newColor,
+                    cornerRadius: element.backgroundColor?.cornerRadius || 0,
+                    paddingTop: element.backgroundColor?.paddingTop || 0,
+                    paddingBottom: element.backgroundColor?.paddingBottom || 0,
+                    paddingLeft: element.backgroundColor?.paddingLeft || 0,
+                    paddingRight: element.backgroundColor?.paddingRight || 0
+                  }
+                });
+                console.log(`✅ Cor aplicada via backgroundColor em ${element.id}: ${newColor}`);
+                changesApplied++;
+              } catch (error2) {
+                console.error(`❌ Erro no método backgroundColor para ${element.id}:`, error2);
+                
+                // Método 3: Tentar updateElement genérico
+                try {
+                  updateElement(element.id, { 
+                    fillColor: newColor,
+                    fill: {
+                      type: '//ly.img.ubq/fill/color',
+                      color: newColor
+                    }
+                  });
+                  console.log(`✅ Cor aplicada via updateElement genérico em ${element.id}: ${newColor}`);
+                  changesApplied++;
+                } catch (error3) {
+                  console.error(`❌ Todos os métodos falharam para ${element.id}:`, error3);
+                }
+              }
+            }
+          });
+        }
+        
+        // Textos mantêm cores originais - não aplicar paleta nos textos
+        console.log('📝 Elementos de texto mantêm cores originais (não alterados)');
+        if (result.textElements && result.textElements.length > 0) {
+          console.log('📝 Encontrados', result.textElements.length, 'elementos de texto (cores preservadas)');
+        }
+        
+        // Aplicar cores em elementos de imagem (tentar background ou overlay)
+        if (result.imageElements && result.imageElements.length > 0) {
+          console.log('🖼️ Processando', result.imageElements.length, 'elementos de imagem...');
+          
+          result.imageElements.forEach((element, index) => {
+            // Usar cores diferentes das shapes, mas não considerar textos
+            const colorIndex = (index + (result.shapeElements?.length || 0)) % selectedPalette.colors.length;
+            const newColor = selectedPalette.colors[colorIndex];
+            
+            console.log(`🖼️ Elemento imagem ${element.id} (${element.name}):`, {
+              currentFill: element.fill,
+              newColor: newColor,
+              elementStructure: Object.keys(element)
+            });
+            
+            // Tentar aplicar cor diretamente no engine CE.SDK
+            try {
+              // Método 1: Aplicar cor diretamente usando engine CE.SDK
+              const { updateTextElement, updateImageElement, updateShapeElement, updateElement, engine } = useFileProcessing();
+              
+              if (engine && engine.block) {
+                // Converter cor hex para rgba
+                const hexToRgba = (hex: string) => {
+                  const r = parseInt(hex.slice(1, 3), 16) / 255;
+                  const g = parseInt(hex.slice(3, 5), 16) / 255;
+                  const b = parseInt(hex.slice(5, 7), 16) / 255;
+                  return { r, g, b, a: 1 };
+                };
+                
+                const colorRgba = hexToRgba(newColor);
+                console.log(`🔧 Aplicando cor ${newColor} via engine CE.SDK no bloco ${element.id}`);
+                
+                try {
+                  // Tentar criar um fill de cor sólida
+                  const colorFill = engine.block.createFill("color");
+                  engine.block.setColor(colorFill, "fill/solid/color", colorRgba);
+                  engine.block.setFill(element.id, colorFill);
+                  console.log(`✅ Fill de cor sólida aplicado via engine CE.SDK ${element.id}: ${newColor}`);
+                  changesApplied++;
+                } catch (engineError) {
+                  console.error(`❌ Erro no engine CE.SDK para ${element.id}:`, engineError);
+                  
+                  // Fallback: Tentar setColor diretamente
+                  try {
+                    engine.block.setColor(element.id, "fill/solid/color", colorRgba);
+                    console.log(`✅ Cor aplicada diretamente via setColor ${element.id}: ${newColor}`);
+                    changesApplied++;
+                  } catch (setColorError) {
+                    console.error(`❌ Erro no setColor direto para ${element.id}:`, setColorError);
+                    
+                    // Fallback: Método original
+                    updateImageElement(element.id, {
+                      fill: {
+                        type: '//ly.img.ubq/fill/color',
+                        color: newColor,
+                        enabled: true
+                      }
+                    });
+                    console.log(`✅ Fallback: Fill aplicado ${element.id}: ${newColor}`);
+                    changesApplied++;
+                  }
+                }
+              } else {
+                throw new Error('Engine não disponível');
+              }
+              
+            } catch (error) {
+              console.error(`❌ Erro geral ao aplicar cor na imagem ${element.id}:`, error);
+            }
+          });
+        }
+        
+        console.log(`🎨 Total de mudanças de cor aplicadas: ${changesApplied}`);
+        
+        if (changesApplied === 0) {
+          showToast({ 
+            type: 'warning', 
+            title: '⚠️ Nenhuma mudança de cor foi aplicada. Verifique se há elementos gráficos no PSD.' 
+          });
+        }
+      }
+      
+      // Aguardar um pouco para as mudanças serem processadas
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Regenerar a imagem final
+      console.log('🔄 Regenerando imagem...');
+      await regenerateImage();
+      
+      showToast({ 
+        type: 'success', 
+        title: '✨ Mudanças IA aplicadas com sucesso!' 
+      });
+      
+      // Fechar modal após aplicar
+      setShowAiModal(false);
+      
+    } catch (error) {
+      console.error('Erro ao aplicar mudanças IA:', error);
+      showToast({ 
+        type: 'error', 
+        title: '❌ Erro ao aplicar mudanças. Tente novamente.' 
+      });
+    } finally {
+      setIsApplyingChanges(false);
+    }
+  };
 
   const handleRegenerateImage = async () => {
     console.log('Handle regenerate image clicked');
@@ -485,6 +819,55 @@ function NewResultScreen() {
                 </span>
                 <span>
                   {isRegenerating || isProcessing ? 'Gerando...' : 'Gerar PNG'}
+                </span>
+              </button>
+              
+              <button
+                className="action-button"
+                onClick={handleAiReposition}
+                disabled={isAiRepositioning || isRegenerating || isProcessing}
+                style={{
+                  background: isAiRepositioning 
+                    ? 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)' 
+                    : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
+                  cursor: isAiRepositioning ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: isAiRepositioning 
+                    ? 'none' 
+                    : '0 4px 12px rgba(139, 92, 246, 0.4)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: isAiRepositioning ? 'scale(0.95)' : 'scale(1)',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isAiRepositioning) {
+                    e.currentTarget.style.transform = 'scale(1.02) translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.5)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isAiRepositioning) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+                  }
+                }}
+              >
+                <span style={{
+                  fontSize: '1rem',
+                  animation: isAiRepositioning ? 'spin 1s linear infinite' : 'none'
+                }}>
+                  {isAiRepositioning ? '🔄' : '🤖'}
+                </span>
+                <span>
+                  {isAiRepositioning ? 'Analisando...' : 'IA Textos'}
                 </span>
               </button>
               
@@ -1028,8 +1411,692 @@ function NewResultScreen() {
               ))}
             </div>
           )}
+
+          {/* AI Responses Section */}
+          {aiResponses.length > 0 && (
+            <div style={{ 
+              backgroundColor: '#fff', 
+              borderRadius: '12px', 
+              padding: '1.5rem',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              marginTop: '1rem'
+            }}>
+              <h3 style={{ 
+                marginBottom: '1rem', 
+                color: '#333',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🤖 Análises da Inteligência Artificial
+              </h3>
+              {aiResponses.map((response, index) => {
+                const isPromptExpanded = expandedPrompts.has(index);
+                
+                return (
+                  <div key={index} style={{ 
+                    marginBottom: '1rem',
+                    padding: '1rem',
+                    backgroundColor: '#f8f9ff',
+                    color: '#1e293b',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    borderLeft: '4px solid #8b5cf6'
+                  }}>
+                    <div style={{ 
+                      fontSize: '0.875rem',
+                      color: '#64748b',
+                      marginBottom: '12px',
+                      fontWeight: '500'
+                    }}>
+                      📅 {response.timestamp}
+                    </div>
+                    
+                    {/* AI Response */}
+                    <div style={{ 
+                      lineHeight: '1.6',
+                      fontSize: '0.95rem',
+                      marginBottom: '12px'
+                    }}>
+                      <strong>💭 Análise da IA:</strong> {response.reasoning}
+                    </div>
+                    
+                    {/* Prompt Section */}
+                    <div style={{ 
+                      borderTop: '1px solid #e2e8f0',
+                      paddingTop: '12px'
+                    }}>
+                      <button
+                        onClick={() => {
+                          const newExpanded = new Set(expandedPrompts);
+                          if (isPromptExpanded) {
+                            newExpanded.delete(index);
+                          } else {
+                            newExpanded.add(index);
+                          }
+                          setExpandedPrompts(newExpanded);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#8b5cf6',
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '4px 0',
+                          marginBottom: '8px'
+                        }}
+                      >
+                        <span>{isPromptExpanded ? '🔽' : '▶️'}</span>
+                        📝 Prompt Enviado para OpenAI
+                      </button>
+                      
+                      {isPromptExpanded && (
+                        <div style={{
+                          backgroundColor: '#1f2937',
+                          color: '#f9fafb',
+                          padding: '12px',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontFamily: 'monospace',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: '1.5',
+                          maxHeight: '300px',
+                          overflowY: 'auto',
+                          border: '1px solid #374151'
+                        }}>
+                          {response.prompt}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{
+                marginTop: '1rem',
+                padding: '0.75rem',
+                backgroundColor: '#f0f8ff',
+                borderRadius: '6px',
+                fontSize: '0.85rem',
+                color: '#0066cc',
+                border: '1px solid #b3d9ff'
+              }}>
+                ℹ️ Estas análises foram geradas pela IA para explicar as decisões de reposicionamento dos elementos.
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* AI Text Modal */}
+      {showAiModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '800px',
+            maxHeight: '80vh',
+            width: '100%',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            overflowY: 'auto'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '24px',
+              borderBottom: '1px solid #e5e7eb',
+              paddingBottom: '16px'
+            }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '600',
+                color: '#1f2937',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🤖 Editor de Textos IA
+              </h2>
+              <button
+                onClick={() => setShowAiModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '4px',
+                  borderRadius: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Property Profile Section */}
+            <div style={{
+              backgroundColor: '#f0f8ff',
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '24px',
+              border: '1px solid #bfdbfe'
+            }}>
+              <h3 style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                color: '#1e40af',
+                margin: '0 0 16px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🏢 Perfil do Imóvel
+              </h3>
+              
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                marginBottom: '16px',
+                flexWrap: 'wrap'
+              }}>
+                {(['baixo', 'medio', 'alto'] as const).map((profile) => (
+                  <label key={profile} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    borderColor: selectedProfile === profile ? '#3b82f6' : '#e5e7eb',
+                    backgroundColor: selectedProfile === profile ? '#dbeafe' : '#ffffff',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <input
+                      type="radio"
+                      name="profile"
+                      value={profile}
+                      checked={selectedProfile === profile}
+                      onChange={(e) => setSelectedProfile(e.target.value as typeof profile)}
+                      style={{ margin: 0 }}
+                    />
+                    <span style={{ textTransform: 'capitalize' }}>
+                      {profile === 'baixo' && '💰'} 
+                      {profile === 'medio' && '🏠'} 
+                      {profile === 'alto' && '✨'} 
+                      {profile} Padrão
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={generateColorPalettes}
+                disabled={isGeneratingPalettes}
+                style={{
+                  background: isGeneratingPalettes
+                    ? 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)'
+                    : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  cursor: isGeneratingPalettes ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isGeneratingPalettes) {
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isGeneratingPalettes) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }
+                }}
+              >
+                <span style={{
+                  animation: isGeneratingPalettes ? 'spin 1s linear infinite' : 'none'
+                }}>
+                  {isGeneratingPalettes ? '🔄' : '🎨'}
+                </span>
+                <span>
+                  {isGeneratingPalettes ? 'Gerando Paletas...' : 'Gerar Paletas de Cores IA'}
+                </span>
+              </button>
+            </div>
+
+            {/* Color Palettes Section */}
+            {colorPalettes.length > 0 && (
+              <div style={{
+                backgroundColor: '#fefefe',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '24px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px'
+                }}>
+                  <h3 style={{
+                    fontSize: '1.125rem',
+                    fontWeight: '600',
+                    color: '#1f2937',
+                    margin: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    🎨 Paletas Recomendadas ({selectedProfile} padrão)
+                  </h3>
+                  <button
+                    onClick={generateColorPalettes}
+                    disabled={isGeneratingPalettes}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    🔄 Gerar Outras
+                  </button>
+                </div>
+                
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '16px'
+                }}>
+                  {colorPalettes.map((palette, index) => (
+                    <div 
+                      key={index} 
+                      onClick={() => setSelectedPaletteIndex(index)}
+                      style={{
+                        border: selectedPaletteIndex === index ? '3px solid #3b82f6' : '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        backgroundColor: selectedPaletteIndex === index ? '#f0f8ff' : '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedPaletteIndex !== index) {
+                          e.currentTarget.style.borderColor = '#9ca3af';
+                          e.currentTarget.style.backgroundColor = '#f9fafb';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedPaletteIndex !== index) {
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                          e.currentTarget.style.backgroundColor = '#ffffff';
+                        }
+                      }}
+                    >
+                      {selectedPaletteIndex === index && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '8px',
+                          right: '8px',
+                          backgroundColor: '#3b82f6',
+                          color: '#ffffff',
+                          borderRadius: '50%',
+                          width: '24px',
+                          height: '24px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.875rem',
+                          fontWeight: 'bold'
+                        }}>
+                          ✓
+                        </div>
+                      )}
+                      
+                      <h4 style={{
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        color: selectedPaletteIndex === index ? '#1e40af' : '#1f2937',
+                        margin: '0 0 8px 0'
+                      }}>
+                        {palette.name}
+                      </h4>
+                      
+                      <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        marginBottom: '12px'
+                      }}>
+                        {palette.colors.map((color: string, colorIndex: number) => (
+                          <div key={colorIndex} style={{
+                            width: '40px',
+                            height: '40px',
+                            backgroundColor: color,
+                            borderRadius: '6px',
+                            border: '2px solid #ffffff',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+                            position: 'relative',
+                            cursor: 'pointer'
+                          }} title={color}>
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '-18px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              fontSize: '0.65rem',
+                              color: '#6b7280',
+                              whiteSpace: 'nowrap',
+                              fontFamily: 'monospace'
+                            }}>
+                              {color}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <p style={{
+                        fontSize: '0.8rem',
+                        color: '#4b5563',
+                        lineHeight: '1.4',
+                        margin: '8px 0'
+                      }}>
+                        <strong>Descrição:</strong> {palette.description}
+                      </p>
+                      
+                      <p style={{
+                        fontSize: '0.75rem',
+                        color: '#6b7280',
+                        lineHeight: '1.3',
+                        margin: '4px 0 0 0'
+                      }}>
+                        <strong>Como usar:</strong> {palette.usage}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Text Elements List */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              {textElements.map((element, index) => (
+                <div key={element.id} style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  backgroundColor: '#f9fafb'
+                }}>
+                  {/* Element Info */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '12px'
+                  }}>
+                    <div>
+                      <div style={{
+                        fontSize: '0.875rem',
+                        color: '#6b7280',
+                        marginBottom: '4px'
+                      }}>
+                        <strong>ID:</strong> {element.id} | <strong>Nome:</strong> {element.name}
+                      </div>
+                      <div style={{
+                        fontSize: '1rem',
+                        color: '#1f2937',
+                        lineHeight: '1.5',
+                        padding: '8px 12px',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                        minHeight: '40px'
+                      }}>
+                        "{element.text}"
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Controls */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '12px'
+                  }}>
+                    {/* Fixed Checkbox */}
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      color: '#374151'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={fixedElements.has(element.id)}
+                        onChange={() => toggleFixedElement(element.id)}
+                        style={{
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer'
+                        }}
+                      />
+                      <span>🔒 Fixo (não alterar)</span>
+                    </label>
+
+                    {/* AI Generate Button */}
+                    <button
+                      onClick={() => handleGenerateIndividualText(element)}
+                      disabled={processingTextId === element.id || fixedElements.has(element.id)}
+                      style={{
+                        background: processingTextId === element.id
+                          ? 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)'
+                          : fixedElements.has(element.id)
+                          ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                          : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        cursor: (processingTextId === element.id || fixedElements.has(element.id))
+                          ? 'not-allowed'
+                          : 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!(processingTextId === element.id || fixedElements.has(element.id))) {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!(processingTextId === element.id || fixedElements.has(element.id))) {
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
+                      }}
+                    >
+                      <span style={{
+                        animation: processingTextId === element.id ? 'spin 1s linear infinite' : 'none'
+                      }}>
+                        {processingTextId === element.id ? '🔄' : '🤖'}
+                      </span>
+                      <span>
+                        {processingTextId === element.id ? 'Gerando...' : 'Gerar IA'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Apply Changes Button */}
+            <div style={{
+              marginTop: '32px',
+              padding: '24px',
+              backgroundColor: '#f8fafc',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <h3 style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                color: '#1f2937',
+                margin: '0 0 12px 0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}>
+                🎯 Aplicar Mudanças no PSD
+              </h3>
+              
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                margin: '0 0 20px 0',
+                lineHeight: '1.5'
+              }}>
+                Aplicará os textos gerados pela IA e as cores da paleta selecionada nos elementos gráficos, 
+                regenerando automaticamente o preview da imagem.
+              </p>
+              
+              <button
+                onClick={applyAiChanges}
+                disabled={isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null)}
+                style={{
+                  background: isApplyingChanges
+                    ? 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)'
+                    : (colorPalettes.length > 0 && selectedPaletteIndex === null)
+                    ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                    : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 32px',
+                  cursor: (isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null))
+                    ? 'not-allowed'
+                    : 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s ease',
+                  margin: '0 auto',
+                  boxShadow: isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null)
+                    ? 'none'
+                    : '0 4px 12px rgba(239, 68, 68, 0.4)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!(isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null))) {
+                    e.currentTarget.style.transform = 'scale(1.05) translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.5)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!(isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null))) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+                  }
+                }}
+              >
+                <span style={{
+                  fontSize: '1.2rem',
+                  animation: isApplyingChanges ? 'spin 1s linear infinite' : 'none'
+                }}>
+                  {isApplyingChanges ? '🔄' : '🎨'}
+                </span>
+                <span>
+                  {isApplyingChanges 
+                    ? 'Aplicando Mudanças...' 
+                    : colorPalettes.length > 0 && selectedPaletteIndex === null
+                    ? 'Selecione uma Paleta Primeiro'
+                    : 'Aplicar Mudanças IA no PSD'
+                  }
+                </span>
+              </button>
+              
+              {colorPalettes.length > 0 && selectedPaletteIndex === null && (
+                <p style={{
+                  fontSize: '0.75rem',
+                  color: '#ef4444',
+                  margin: '8px 0 0 0',
+                  fontWeight: '500'
+                }}>
+                  ⚠️ Você deve selecionar uma paleta de cores antes de aplicar as mudanças
+                </p>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              marginTop: '24px',
+              padding: '16px',
+              backgroundColor: '#f0f8ff',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              color: '#1e40af'
+            }}>
+              💡 <strong>Como usar:</strong> Clique em "Gerar IA" para criar um texto similar com palavras diferentes. 
+              Marque "Fixo" para proteger textos que não devem ser alterados. Selecione uma paleta de cores e clique em "Aplicar Mudanças IA no PSD" para finalizar.
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
