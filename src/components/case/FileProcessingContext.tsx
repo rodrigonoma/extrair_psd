@@ -15,6 +15,163 @@ import {
 } from 'react';
 import { ExampleFile } from './ExampleFileContainer';
 
+// ✅ DEFINIÇÕES GLOBAIS DE FONTES - Adicione novas fontes aqui
+const FONT_DEFINITIONS = {
+  'Aviano Sans Thin': {
+    name: 'Aviano Sans Thin',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Thin.otf',
+      style: 'normal',
+      weight: 'thin',
+      subFamily: 'Thin'
+    }]
+  },
+  'Aviano Sans Bold': {
+    name: 'Aviano Sans Bold',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Aviano%20Sans%20Bold.otf',
+      style: 'normal',
+      weight: 'bold',
+      subFamily: 'Bold'
+    }]
+  },
+  'Aviano Sans Light': {
+    name: 'Aviano Sans Light',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Light.otf',
+      style: 'normal',
+      weight: 'light',
+      subFamily: 'Light'
+    }]
+  },
+  'Aviano Sans Black': {
+    name: 'Aviano Sans Black',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Black.otf',
+      style: 'normal',
+      weight: 'black',
+      subFamily: 'Black'
+    }]
+  },
+  'Inter 28pt': {
+    name: 'Inter 28pt',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Inter%2028pt.ttf',
+      style: 'normal',
+      weight: 'normal',
+      subFamily: 'Regular'
+    }]
+  },
+  'Inter 24pt': {
+    name: 'Inter 24pt',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Inter_24pt-Regular.ttf',
+      style: 'normal',
+      weight: 'normal',
+      subFamily: 'Regular'
+    }]
+  },
+  'Inter 24pt Bold': {
+    name: 'Inter 24pt Bold',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Inter_24pt-Bold.ttf',
+      style: 'normal',
+      weight: 'bold',
+      subFamily: 'Bold'
+    }]
+  },
+  'Inter 24pt Light': {
+    name: 'Inter 24pt Light',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Inter_24pt-Light.ttf',
+      style: 'normal',
+      weight: 'light',
+      subFamily: 'Light'
+    }]
+  },
+  'Inter 28pt Bold': {
+    name: 'Inter 28pt Bold',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Inter_28pt-Bold.ttf',
+      style: 'normal',
+      weight: 'bold',
+      subFamily: 'Bold'
+    }]
+  },
+  'BebasNeue Regular': {
+    name: 'BebasNeue Regular',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/BebasNeue%20Regular.otf',
+      style: 'normal',
+      weight: 'normal',
+      subFamily: 'Regular'
+    }]
+  },
+  'BebasNeue Bold': {
+    name: 'BebasNeue Bold',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/BebasNeue%20Bold.otf',
+      style: 'normal',
+      weight: 'bold',
+      subFamily: 'Bold'
+    }]
+  },
+  'BebasNeue Light': {
+    name: 'BebasNeue Light',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/BebasNeue%20Light.otf',
+      style: 'normal',
+      weight: 'light',
+      subFamily: 'Light'
+    }]
+  },
+  'BebasNeue Thin': {
+    name: 'BebasNeue Thin',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/BebasNeue%20Thin.otf',
+      style: 'normal',
+      weight: 'thin',
+      subFamily: 'Thin'
+    }]
+  },
+  'BebasNeue Book': {
+    name: 'BebasNeue Book',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/BebasNeue%20Book.otf',
+      style: 'normal',
+      weight: 'normal',
+      subFamily: 'Book'
+    }]
+  },
+  'Montserrat Regular': {
+    name: 'Montserrat Regular',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Montserrat-Regular.ttf',
+      style: 'normal',
+      weight: 'normal',
+      subFamily: 'Regular'
+    }]
+  },
+  'Montserrat Bold': {
+    name: 'Montserrat Bold',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Montserrat-Bold.ttf',
+      style: 'normal',
+      weight: 'bold',
+      subFamily: 'Bold'
+    }]
+  },
+  'Montserrat Light': {
+    name: 'Montserrat Light',
+    fonts: [{
+      uri: 'http://localhost:3000/fonts/Montserrat-Light.ttf',
+      style: 'normal',
+      weight: 'light',
+      subFamily: 'Light'
+    }]
+  }
+};
+
 interface TextElement {
   id: number;
   text: string;
@@ -1283,44 +1440,7 @@ const FileProcessingContextProvider = ({
               try {
                 // Use the same direct font application method that works for font switching
                 try {
-                  const fontDefinitions = {
-                    'Aviano Sans Thin': {
-                      name: 'Aviano Sans Thin',
-                      fonts: [{
-                        uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Thin.otf',
-                        style: 'normal',
-                        weight: 'thin',
-                        subFamily: 'Thin'
-                      }]
-                    },
-                    'Aviano Sans Bold': {
-                      name: 'Aviano Sans Bold',
-                      fonts: [{
-                        uri: 'http://localhost:3000/fonts/Aviano%20Sans%20Bold.otf',
-                        style: 'normal',
-                        weight: 'bold',
-                        subFamily: 'Bold'
-                      }]
-                    },
-                    'Aviano Sans Light': {
-                      name: 'Aviano Sans Light',
-                      fonts: [{
-                        uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Light.otf',
-                        style: 'normal',
-                        weight: 'light',
-                        subFamily: 'Light'
-                      }]
-                    },
-                    'Aviano Sans Black': {
-                      name: 'Aviano Sans Black',
-                      fonts: [{
-                        uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Black.otf',
-                        style: 'normal',
-                        weight: 'black',
-                        subFamily: 'Black'
-                      }]
-                    }
-                  };
+                  const fontDefinitions = FONT_DEFINITIONS;
                   
                   const fontDef = fontDefinitions[replacement];
                   if (fontDef && fontDef.fonts && fontDef.fonts[0]) {
@@ -1823,163 +1943,9 @@ const FileProcessingContextProvider = ({
     let creativeEngine: any;
     
     try {
-      // Define local font mappings for asset registration
+      // Use global font definitions for asset registration
       console.log('🔧 Preparing local font definitions...');
-      const localFontDefinitions = {
-        'Aviano Sans Thin': {
-          name: 'Aviano Sans Thin', 
-          fonts: [{
-            uri: '/fonts/Avianos%20Sans%20Thin.otf',
-            style: 'normal',
-            weight: 'thin',
-            subFamily: 'Thin'
-          }]
-        },
-        'Aviano Sans Bold': {
-          name: 'Aviano Sans Bold',
-          fonts: [{
-            uri: '/fonts/Aviano%20Sans%20Bold.otf',
-            style: 'normal',
-            weight: 'bold',
-            subFamily: 'Bold'
-          }]
-        },
-        'Aviano Sans Light': {
-          name: 'Aviano Sans Light',
-          fonts: [{
-            uri: '/fonts/Avianos%20Sans%20Light.otf', 
-            style: 'normal',
-            weight: 'light',
-            subFamily: 'Light'
-          }]
-        },
-        'Aviano Sans Black': {
-          name: 'Aviano Sans Black',
-          fonts: [{
-            uri: '/fonts/Avianos%20Sans%20Black.otf',
-            style: 'normal', 
-            weight: 'black',
-            subFamily: 'Black'
-          }]
-        },
-        'Inter 28pt': {
-          name: 'Inter 28pt',
-          fonts: [{
-            uri: '/fonts/Inter%2028pt.ttf',
-            style: 'normal',
-            weight: 'normal',
-            subFamily: 'Regular'
-          }]
-        },
-        'Inter 24pt': {
-          name: 'Inter 24pt',
-          fonts: [{
-            uri: '/fonts/Inter_24pt-Regular.ttf',
-            style: 'normal',
-            weight: 'normal',
-            subFamily: 'Regular'
-          }]
-        },
-        'Inter 24pt Bold': {
-          name: 'Inter 24pt Bold',
-          fonts: [{
-            uri: '/fonts/Inter_24pt-Bold.ttf',
-            style: 'normal',
-            weight: 'bold',
-            subFamily: 'Bold'
-          }]
-        },
-        'Inter 24pt Light': {
-          name: 'Inter 24pt Light',
-          fonts: [{
-            uri: '/fonts/Inter_24pt-Light.ttf',
-            style: 'normal',
-            weight: 'light',
-            subFamily: 'Light'
-          }]
-        },
-        'Inter 28pt Bold': {
-          name: 'Inter 28pt Bold',
-          fonts: [{
-            uri: '/fonts/Inter_28pt-Bold.ttf',
-            style: 'normal',
-            weight: 'bold',
-            subFamily: 'Bold'
-          }]
-        },
-        'BebasNeue Regular': {
-          name: 'BebasNeue Regular',
-          fonts: [{
-            uri: '/fonts/BebasNeue%20Regular.otf',
-            style: 'normal',
-            weight: 'normal',
-            subFamily: 'Regular'
-          }]
-        },
-        'BebasNeue Bold': {
-          name: 'BebasNeue Bold',
-          fonts: [{
-            uri: '/fonts/BebasNeue%20Bold.otf',
-            style: 'normal',
-            weight: 'bold',
-            subFamily: 'Bold'
-          }]
-        },
-        'BebasNeue Light': {
-          name: 'BebasNeue Light',
-          fonts: [{
-            uri: '/fonts/BebasNeue%20Light.otf',
-            style: 'normal',
-            weight: 'light',
-            subFamily: 'Light'
-          }]
-        },
-        'BebasNeue Thin': {
-          name: 'BebasNeue Thin',
-          fonts: [{
-            uri: '/fonts/BebasNeue%20Thin.otf',
-            style: 'normal',
-            weight: 'thin',
-            subFamily: 'Thin'
-          }]
-        },
-        'BebasNeue Book': {
-          name: 'BebasNeue Book',
-          fonts: [{
-            uri: '/fonts/BebasNeue%20Book.otf',
-            style: 'normal',
-            weight: 'normal',
-            subFamily: 'Book'
-          }]
-        },
-        'Montserrat Regular': {
-          name: 'Montserrat Regular',
-          fonts: [{
-            uri: '/fonts/Montserrat-Regular.ttf',
-            style: 'normal',
-            weight: 'normal',
-            subFamily: 'Regular'
-          }]
-        },
-        'Montserrat Bold': {
-          name: 'Montserrat Bold',
-          fonts: [{
-            uri: '/fonts/Montserrat-Bold.ttf',
-            style: 'normal',
-            weight: 'bold',
-            subFamily: 'Bold'
-          }]
-        },
-        'Montserrat Light': {
-          name: 'Montserrat Light',
-          fonts: [{
-            uri: '/fonts/Montserrat-Light.ttf',
-            style: 'normal',
-            weight: 'light',
-            subFamily: 'Light'
-          }]
-        }
-      };
+      const localFontDefinitions = FONT_DEFINITIONS;
 
       creativeEngine = await CreativeEngine.init({
         license: process.env.NEXT_PUBLIC_LICENSE
@@ -2974,44 +2940,7 @@ const FileProcessingContextProvider = ({
               console.log('🔄 Asset search failed, trying direct font application...');
               
               // Use our font definitions directly (from the same scope)
-              const fontDefinitions = {
-                'Aviano Sans Thin': {
-                  name: 'Aviano Sans Thin',
-                  fonts: [{
-                    uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Thin.otf',
-                    style: 'normal',
-                    weight: 'thin',
-                    subFamily: 'Thin'
-                  }]
-                },
-                'Aviano Sans Bold': {
-                  name: 'Aviano Sans Bold',
-                  fonts: [{
-                    uri: 'http://localhost:3000/fonts/Aviano%20Sans%20Bold.otf',
-                    style: 'normal',
-                    weight: 'bold',
-                    subFamily: 'Bold'
-                  }]
-                },
-                'Aviano Sans Light': {
-                  name: 'Aviano Sans Light',
-                  fonts: [{
-                    uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Light.otf',
-                    style: 'normal',
-                    weight: 'light',
-                    subFamily: 'Light'
-                  }]
-                },
-                'Aviano Sans Black': {
-                  name: 'Aviano Sans Black',
-                  fonts: [{
-                    uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Black.otf',
-                    style: 'normal',
-                    weight: 'black',
-                    subFamily: 'Black'
-                  }]
-                }
-              };
+              const fontDefinitions = FONT_DEFINITIONS;
               
               const directFontDef = fontDefinitions[value];
               if (directFontDef && directFontDef.fonts && directFontDef.fonts[0]) {
