@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './root.css';
+import { ToastProvider } from '../components/Toast';
 
 export const metadata: Metadata = {
   title: 'Analisador de Texto e Fontes PSD',
@@ -13,7 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>{children}</body>
+      <body suppressHydrationWarning={true}>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }
