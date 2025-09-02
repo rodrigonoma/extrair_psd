@@ -72,6 +72,9 @@ interface TextElement {
     color: string;
     width: number;
   };
+  
+  // Store all raw properties for advanced editing
+  rawProperties?: any;
 }
 
 interface ImageElement {
@@ -132,6 +135,9 @@ interface ImageElement {
     // For solid color fills
     color?: string;
   };
+  
+  // Store all raw properties for advanced editing
+  rawProperties?: any;
 }
 
 interface ShapeElement {
@@ -203,7 +209,9 @@ interface FileProcessingContextValue {
   updateTextElement: (id: number, updates: Partial<TextElement>) => void;
   updateImageElement: (id: number, updates: Partial<ImageElement>) => void;
   updateShapeElement: (id: number, updates: Partial<ShapeElement>) => void;
+  updateElement: (id: number, updates: any) => void;
   regenerateImage: () => Promise<void>;
+  generateBatchImages: (items: Array<{[key: string]: any}>) => Promise<string[]>;
   engine: any;
 }
 
@@ -219,7 +227,9 @@ const FileProcessingContext = createContext<FileProcessingContextValue>({
   updateTextElement: () => {},
   updateImageElement: () => {},
   updateShapeElement: () => {},
+  updateElement: () => {},
   regenerateImage: async () => {},
+  generateBatchImages: async () => [],
   engine: null
 });
 
@@ -325,9 +335,197 @@ const FileProcessingContextProvider = ({
     };
   };
 
-  // Extract text element data
+  // Register font in CE.SDK engine using proper asset system
+  const registerFontInEngine = async (engine: any, fontFamily: string, fontFileUri: string) => {
+    try {
+      console.log('🔧 Registering font in CE.SDK:', fontFamily, fontFileUri);
+      
+      // Method 1: CE.SDK Asset System (like in example project)
+      if (engine.asset && typeof engine.asset.addLocalSource === 'function' && typeof engine.asset.addAssetToSource === 'function') {
+        try {
+          const sourceId = 'custom-fonts';
+          
+          // Add local source if not exists
+          try {
+            engine.asset.addLocalSource(sourceId, {
+              type: 'ly.img.asset.typeface',
+              payload: { typefaces: [] }
+            });
+          } catch (e) {
+            // Source might already exist, that's ok
+            console.log('Source already exists or creation failed:', e.message);
+          }
+          
+          // Determine font subfamily and weight from filename
+          let subFamily = 'Regular';
+          let weight = 'normal';
+          const fileName = fontFileUri.split('/').pop() || '';
+          
+          if (/bold/i.test(fileName)) { weight = 'bold'; subFamily = 'Bold'; }
+          else if (/light/i.test(fileName)) { weight = 'light'; subFamily = 'Light'; }
+          else if (/thin/i.test(fileName)) { weight = 'thin'; subFamily = 'Thin'; }
+          else if (/black/i.test(fileName)) { weight = 'black'; subFamily = 'Black'; }
+          else if (/book/i.test(fileName)) { weight = 'normal'; subFamily = 'Book'; }
+          else if (/regular/i.test(fileName)) { weight = 'normal'; subFamily = 'Regular'; }
+          
+          // Create proper typeface payload
+          const typefacePayload = {
+            name: fontFamily,
+            fonts: [{
+              uri: fontFileUri,
+              subFamily: subFamily,
+              weight: weight,
+              style: /italic/i.test(fileName) ? 'italic' : 'normal'
+            }]
+          };
+          
+          // Add asset to source
+          const assetId = `typeface-${fontFamily.toLowerCase().replace(/\s+/g, '-')}`;
+          await engine.asset.addAssetToSource(sourceId, {
+            id: assetId,
+            payload: { typeface: typefacePayload }
+          });
+          
+          console.log('✅ Font registered in CE.SDK asset system:', assetId);
+          
+        } catch (e) {
+          console.log('CE.SDK asset registration failed:', e);
+        }
+      }
+      
+      // Method 2: Direct browser font loading (fallback)
+      try {
+        console.log('Loading font in browser...');
+        const fontFace = new FontFace(fontFamily, `url(${fontFileUri})`);
+        await fontFace.load();
+        document.fonts.add(fontFace);
+        console.log('✅ Font loaded in browser');
+      } catch (e) {
+        console.log('Browser font loading failed:', e);
+      }
+      
+    } catch (error) {
+      console.error('Font registration error:', error);
+    }
+  };
+
+  // Extract comprehensive block properties using CE.SDK API
+  const extractAllBlockProperties = (engine: any, blockId: number) => {
+    const properties: any = {};
+    try {
+      const blockProperties = engine.block.findAllProperties(blockId);
+      for (const propPath of blockProperties) {
+        try {
+          let value;
+          if (propPath.includes('color')) {
+            value = engine.block.getColor(blockId, propPath);
+          } else if (
+            propPath.includes('text/text') ||
+            propPath.includes('text/typeface') ||
+            propPath.includes('text/fontFamily') ||
+            propPath.includes('identifier') ||
+            propPath.includes('format') ||
+            propPath.includes('provider') ||
+            propPath.includes('externalReference')
+          ) {
+            value = engine.block.getString(blockId, propPath);
+          } else if (
+            propPath === 'text/hasClippedLines' ||
+            propPath === 'text/automaticFontSizeEnabled' ||
+            propPath === 'text/clipLinesOutsideOfFrame' ||
+            propPath.includes('alwaysOnBottom') ||
+            propPath.includes('alwaysOnTop') ||
+            propPath.includes('dropShadow/clip') ||
+            propPath.includes('highlightEnabled') ||
+            propPath.includes('includedInExport') ||
+            propPath.includes('clipped') ||
+            propPath.includes('locked') ||
+            propPath === 'fill/includedInExport' ||
+            propPath === 'fill/placeholderBehavior/enabled'
+          ) {
+            value = engine.block.getBool(blockId, propPath);
+          } else if (
+            propPath.includes('text/horizontalAlignment') ||
+            propPath.includes('text/verticalAlignment') ||
+            propPath.includes('blend/mode') ||
+            propPath.includes('contentFill/mode') ||
+            propPath.includes('height/mode') ||
+            propPath.includes('position/x/mode') ||
+            propPath.includes('position/y/mode') ||
+            propPath.includes('stroke/cornerGeometry') ||
+            propPath.includes('stroke/position') ||
+            propPath.includes('stroke/style') ||
+            propPath.includes('width/mode')
+          ) {
+            value = engine.block.getEnum(blockId, propPath);
+          } else if (
+            propPath.includes('text/fontSize') ||
+            propPath.includes('x') ||
+            propPath.includes('y') ||
+            propPath.includes('weight') ||
+            propPath.includes('opacity') ||
+            propPath.includes('rotation')
+          ) {
+            value = engine.block.getFloat(blockId, propPath);
+          } else {
+            // Try different methods in order of likelihood with better error handling
+            let extracted = false;
+            
+            // Use smarter method selection based on property path
+            const methods = [];
+            
+            if (propPath.includes('duration') || propPath.includes('timeOffset') || propPath === 'playback/time') {
+              methods.push(() => engine.block.getDouble(blockId, propPath));
+            } else if (propPath.includes('showOverlay') || propPath.includes('enabled') || propPath.includes('visible') || propPath.includes('clip')) {
+              methods.push(() => engine.block.getBool(blockId, propPath));
+            } else if (propPath === 'type' || propPath.includes('name') || propPath.includes('identifier') || propPath.includes('uri')) {
+              methods.push(() => engine.block.getString(blockId, propPath));
+            }
+            
+            // Add fallback methods
+            methods.push(
+              () => engine.block.getString(blockId, propPath),
+              () => engine.block.getBool(blockId, propPath),
+              () => engine.block.getFloat(blockId, propPath),
+              () => engine.block.getEnum(blockId, propPath),
+              () => engine.block.getDouble(blockId, propPath)
+            );
+            
+            for (const method of methods) {
+              try {
+                value = method();
+                extracted = true;
+                break;
+              } catch (e) {
+                if (e.message.includes('Property is not readable') || 
+                    e.message.includes('no such fill color') ||
+                    e.message.includes('Incorrect function used')) {
+                  // Skip this property silently
+                  break;
+                }
+                // Continue to next method
+              }
+            }
+            
+            if (!extracted) {
+              continue;
+            }
+          }
+          properties[propPath] = value;
+        } catch (error) {
+          console.log(`Error extracting property ${propPath}:`, error);
+        }
+      }
+    } catch (error) {
+      console.log('Error getting block properties:', error);
+    }
+    return properties;
+  };
+
+  // Extract text element data with comprehensive properties
   const extractTextElement = (engine: any, blockId: number): TextElement => {
     const baseData = extractBlockData(engine, blockId);
+    const allProperties = extractAllBlockProperties(engine, blockId);
     
     let text = '', fontFamily = '', fontSize = 16, color = '#000000';
     
@@ -335,15 +533,29 @@ const FileProcessingContextProvider = ({
       text = engine.block.getString(blockId, 'text/text') || '';
       fontSize = engine.block.getFloat(blockId, 'text/fontSize') || 16;
       
-      // Try to get font family
+      // Try to get font family with multiple methods
       try {
-        // Use 'typeface' as that's what CE.SDK actually uses
-        fontFamily = engine.block.getString(blockId, 'text/typeface') || 'Arial';
+        // Method 1: Try getTypeface()
+        const typeface = engine.block.getTypeface(blockId);
+        if (typeface && typeface.name) {
+          fontFamily = typeface.name;
+        } else if (typeface && typeface.id) {
+          fontFamily = typeface.id;
+        }
       } catch (e) {
         try {
-          fontFamily = engine.block.getString(blockId, 'text/fontFamily') || 'Arial';
+          // Method 2: text/typeface property
+          const typefaceId = engine.block.getString(blockId, 'text/typeface');
+          if (typefaceId) {
+            fontFamily = typefaceId;
+          }
         } catch (e2) {
-          fontFamily = 'Arial';
+          try {
+            // Method 3: text/fontFamily property
+            fontFamily = engine.block.getString(blockId, 'text/fontFamily') || 'Arial';
+          } catch (e3) {
+            fontFamily = 'Arial';
+          }
         }
       }
       
@@ -530,34 +742,41 @@ const FileProcessingContextProvider = ({
     return undefined;
   };
 
-  // Extract image element data
+  // Extract image element data with comprehensive properties
   const extractImageElement = (engine: any, blockId: number): ImageElement => {
     const baseData = extractBlockData(engine, blockId);
+    const allProperties = extractAllBlockProperties(engine, blockId);
     
     const imageUrl = extractImageUrl(engine, blockId);
     
-    // Extract comprehensive image properties
     const imageElement: ImageElement = {
       ...baseData,
-      imageUrl
+      imageUrl,
+      
+      // Additional properties from comprehensive extraction
+      opacity: allProperties['opacity'] || 1,
+      rotation: allProperties['rotation'] || 0,
+      clipped: allProperties['clipped'] || false,
+      
+      // Crop properties if available
+      crop: {
+        rotation: allProperties['crop/rotation'] || 0,
+        scaleRatio: allProperties['crop/scaleRatio'] || 1,
+        scaleX: allProperties['crop/scaleX'] || 1,
+        scaleY: allProperties['crop/scaleY'] || 1,
+        translationX: allProperties['crop/translationX'] || 0,
+        translationY: allProperties['crop/translationY'] || 0
+      },
+      
+      // Store all raw properties for advanced editing
+      rawProperties: allProperties
     };
     
-    // Extract opacity
-    try {
-      if (typeof engine.block.getOpacity === 'function') {
-        const opacity = engine.block.getOpacity(blockId);
-        if (opacity !== undefined) imageElement.opacity = opacity;
-      }
-    } catch (e) {}
-    
-    // Extract rotation
-    try {
-      if (typeof engine.block.getRotation === 'function') {
-        const rotation = engine.block.getRotation(blockId);
-        if (rotation !== undefined) imageElement.rotation = rotation;
-      }
-    } catch (e) {}
-    
+    return imageElement;
+  };
+
+  // Legacy property extraction (keeping for compatibility)
+  const extractLegacyImageProperties = (engine: any, blockId: number, imageElement: ImageElement) => {
     // Extract clipped
     try {
       const clipped = engine.block.getBool(blockId, 'clipped');
@@ -759,10 +978,69 @@ const FileProcessingContextProvider = ({
     return fontResults.filter(f => f.loaded);
   };
 
-  // Skip font registration for now to avoid interference
+  // Register fonts for CE.SDK using hosted approach
   const registerFontsInEngine = async (engine: any, loadedFonts: any[]) => {
-    console.log('🔧 Fonts are loaded in document.fonts for UI display');
-    console.log('✅ Font registration skipped to preserve UI functionality');
+    console.log('🔧 Registering hosted fonts for CE.SDK...');
+    
+    try {
+      // First test if fonts are accessible via HTTP
+      for (const font of loadedFonts.slice(0, 2)) { // Test with Aviano fonts
+        const fontUrl = `/fonts/${encodeURIComponent(font.file)}`;
+        
+        try {
+          const response = await fetch(fontUrl);
+          if (response.ok) {
+            console.log(`✅ Font accessible via HTTP: ${fontUrl}`);
+            
+            // Register with CE.SDK asset system
+            const fontId = font.cssName.toLowerCase().replace(/\s+/g, '-');
+            
+            try {
+              // Add as local source if it doesn't exist
+              if (!engine.asset.findAllSources().includes('local-hosted-fonts')) {
+                engine.asset.addLocalSource('local-hosted-fonts');
+                console.log('✅ Added local-hosted-fonts source');
+              }
+              
+              // Add the font asset
+              engine.asset.addAssetToSource('local-hosted-fonts', {
+                id: fontId,
+                label: {
+                  en: font.cssName
+                },
+                tags: ['font', 'custom'],
+                payload: {
+                  typeface: {
+                    name: font.cssName,
+                    fonts: [{
+                      uri: `${window.location.origin}${fontUrl}`,
+                      subFamily: 'Regular',
+                      weight: 'normal',
+                      style: 'normal'
+                    }]
+                  }
+                }
+              });
+              
+              console.log(`✅ Registered font asset: ${font.cssName}`);
+              
+            } catch (assetError) {
+              console.log(`❌ Failed to register font asset ${font.cssName}:`, assetError.message);
+            }
+            
+          } else {
+            console.log(`❌ Font not accessible: ${fontUrl} (${response.status})`);
+          }
+        } catch (fetchError) {
+          console.log(`❌ Font fetch failed: ${fontUrl}`, fetchError.message);
+        }
+      }
+      
+    } catch (error) {
+      console.log('❌ Font registration error:', error);
+    }
+    
+    console.log('🔧 Font registration completed');
   };
 
   // Helper function to map font names to file names
@@ -1498,15 +1776,199 @@ const FileProcessingContextProvider = ({
     let creativeEngine: any;
     
     try {
-      creativeEngine = await CreativeEngine.init({
-        license: process.env.NEXT_PUBLIC_LICENSE,
-        ui: {
-          typefaceLibraries: ['ly.img.google-fonts']
+      // Define local font mappings for asset registration
+      console.log('🔧 Preparing local font definitions...');
+      const localFontDefinitions = {
+        'Aviano Sans Thin': {
+          name: 'Aviano Sans Thin', 
+          fonts: [{
+            uri: '/fonts/Avianos%20Sans%20Thin.otf',
+            style: 'normal',
+            weight: 'thin',
+            subFamily: 'Thin'
+          }]
+        },
+        'Aviano Sans Bold': {
+          name: 'Aviano Sans Bold',
+          fonts: [{
+            uri: '/fonts/Aviano%20Sans%20Bold.otf',
+            style: 'normal',
+            weight: 'bold',
+            subFamily: 'Bold'
+          }]
+        },
+        'Aviano Sans Light': {
+          name: 'Aviano Sans Light',
+          fonts: [{
+            uri: '/fonts/Avianos%20Sans%20Light.otf', 
+            style: 'normal',
+            weight: 'light',
+            subFamily: 'Light'
+          }]
+        },
+        'Aviano Sans Black': {
+          name: 'Aviano Sans Black',
+          fonts: [{
+            uri: '/fonts/Avianos%20Sans%20Black.otf',
+            style: 'normal', 
+            weight: 'black',
+            subFamily: 'Black'
+          }]
+        },
+        'Inter 28pt': {
+          name: 'Inter 28pt',
+          fonts: [{
+            uri: '/fonts/Inter%2028pt.ttf',
+            style: 'normal',
+            weight: 'normal',
+            subFamily: 'Regular'
+          }]
+        },
+        'Inter 24pt': {
+          name: 'Inter 24pt',
+          fonts: [{
+            uri: '/fonts/Inter_24pt-Regular.ttf',
+            style: 'normal',
+            weight: 'normal',
+            subFamily: 'Regular'
+          }]
+        },
+        'Inter 24pt Bold': {
+          name: 'Inter 24pt Bold',
+          fonts: [{
+            uri: '/fonts/Inter_24pt-Bold.ttf',
+            style: 'normal',
+            weight: 'bold',
+            subFamily: 'Bold'
+          }]
+        },
+        'Inter 24pt Light': {
+          name: 'Inter 24pt Light',
+          fonts: [{
+            uri: '/fonts/Inter_24pt-Light.ttf',
+            style: 'normal',
+            weight: 'light',
+            subFamily: 'Light'
+          }]
+        },
+        'Inter 28pt Bold': {
+          name: 'Inter 28pt Bold',
+          fonts: [{
+            uri: '/fonts/Inter_28pt-Bold.ttf',
+            style: 'normal',
+            weight: 'bold',
+            subFamily: 'Bold'
+          }]
+        },
+        'BebasNeue Regular': {
+          name: 'BebasNeue Regular',
+          fonts: [{
+            uri: '/fonts/BebasNeue%20Regular.otf',
+            style: 'normal',
+            weight: 'normal',
+            subFamily: 'Regular'
+          }]
+        },
+        'BebasNeue Bold': {
+          name: 'BebasNeue Bold',
+          fonts: [{
+            uri: '/fonts/BebasNeue%20Bold.otf',
+            style: 'normal',
+            weight: 'bold',
+            subFamily: 'Bold'
+          }]
+        },
+        'BebasNeue Light': {
+          name: 'BebasNeue Light',
+          fonts: [{
+            uri: '/fonts/BebasNeue%20Light.otf',
+            style: 'normal',
+            weight: 'light',
+            subFamily: 'Light'
+          }]
+        },
+        'BebasNeue Thin': {
+          name: 'BebasNeue Thin',
+          fonts: [{
+            uri: '/fonts/BebasNeue%20Thin.otf',
+            style: 'normal',
+            weight: 'thin',
+            subFamily: 'Thin'
+          }]
+        },
+        'BebasNeue Book': {
+          name: 'BebasNeue Book',
+          fonts: [{
+            uri: '/fonts/BebasNeue%20Book.otf',
+            style: 'normal',
+            weight: 'normal',
+            subFamily: 'Book'
+          }]
+        },
+        'Montserrat Regular': {
+          name: 'Montserrat Regular',
+          fonts: [{
+            uri: '/fonts/Montserrat-Regular.ttf',
+            style: 'normal',
+            weight: 'normal',
+            subFamily: 'Regular'
+          }]
+        },
+        'Montserrat Bold': {
+          name: 'Montserrat Bold',
+          fonts: [{
+            uri: '/fonts/Montserrat-Bold.ttf',
+            style: 'normal',
+            weight: 'bold',
+            subFamily: 'Bold'
+          }]
+        },
+        'Montserrat Light': {
+          name: 'Montserrat Light',
+          fonts: [{
+            uri: '/fonts/Montserrat-Light.ttf',
+            style: 'normal',
+            weight: 'light',
+            subFamily: 'Light'
+          }]
         }
+      };
+
+      creativeEngine = await CreativeEngine.init({
+        license: process.env.NEXT_PUBLIC_LICENSE
       });
       setEngine(creativeEngine);
+      console.log('✅ CreativeEngine initialized');
       
       setStatus('processing');
+      
+      // Create and add local font asset source
+      console.log('🔧 Setting up local font assets...');
+      const LOCAL_FONTS_SOURCE = 'ly.img.local-fonts';
+      
+      if (!creativeEngine.asset.findAllSources().includes(LOCAL_FONTS_SOURCE)) {
+        creativeEngine.asset.addLocalSource(LOCAL_FONTS_SOURCE);
+        console.log('✅ Local fonts source created');
+      }
+      
+      // Register each font as an asset
+      Object.entries(localFontDefinitions).forEach(([fontName, fontDef]) => {
+        const assetDefinition = {
+          id: `font-${fontName.replace(/\s+/g, '-').toLowerCase()}`,
+          locale: 'en',
+          label: fontName,
+          tags: ['font', 'typeface'],
+          thumbUri: null,
+          kind: 'font',
+          payload: {
+            typeface: fontDef
+          }
+        };
+        
+        creativeEngine.asset.addAssetToSource(LOCAL_FONTS_SOURCE, assetDefinition);
+        console.log('✅ Registered font asset:', fontName);
+      });
+      
       // Add Google Fonts BEFORE parsing PSD to ensure fonts are available during parse
       console.log('Adding Google Fonts library...');
       await addGoogleFontsAssetLibrary(creativeEngine);
@@ -1683,54 +2145,111 @@ const FileProcessingContextProvider = ({
         console.log('Setting font size to:', updates.fontSize);
         engine.block.setFloat(id, 'text/fontSize', updates.fontSize);
       }
+      if (updates.fontFamily !== undefined && updates.fontFamily !== element.fontFamily) {
+        console.log('🔤 FONT UPDATE DETECTED!');
+        console.log('New font identifier:', updates.fontFamily);
+        console.log('Current font identifier:', element.fontFamily);
+        
+        try {
+          const fontFileUri = `/fonts/${updates.fontFile}`;
+          console.log('Font URI:', fontFileUri);
+          
+          // Try to register font first in the engine
+          registerFontInEngine(engine, updates.fontFamily, fontFileUri);
+          
+          // Method 1: Set font using the registered family name  
+          try {
+            console.log('Setting font family:', updates.fontFamily);
+            
+            // Use the font family name directly (not the identifier)
+            engine.block.setString(id, 'text/typeface', updates.fontFamily);
+            
+            // Verify the change
+            const newTypeface = engine.block.getString(id, 'text/typeface');
+            console.log('Font set successfully. New typeface:', newTypeface);
+            
+            // Additional methods to force font update
+            try {
+              // Method 1a: Try updating via typeface configuration
+              if (engine.config && engine.config.text && engine.config.text.fonts) {
+                const fontConfig = engine.config.text.fonts.find((f: any) => f.fontFamily === updates.fontFamily);
+                if (fontConfig) {
+                  console.log('Found font config:', fontConfig);
+                  engine.block.setString(id, 'text/typeface', fontConfig.identifier || updates.fontFamily);
+                }
+              }
+            } catch (e) {
+              console.log('Could not use font config:', e);
+            }
+            
+            // Force re-render
+            try {
+              // Multiple methods to force re-render
+              if (typeof engine.block.setVisible === 'function') {
+                engine.block.setVisible(id, false);
+                setTimeout(() => engine.block.setVisible(id, true), 50);
+              }
+              
+              if (typeof engine.scene?.zoomToBlock === 'function') {
+                engine.scene.zoomToBlock(id);
+              }
+              
+              console.log('✅ Font update applied with re-render');
+              
+            } catch (e) {
+              console.log('Could not force re-render:', e);
+            }
+            
+          } catch (e) {
+            console.error('❌ Font setting failed:', e);
+          }
+          
+        } catch (fontError) {
+          console.error('❌ Font registration and setting failed:', fontError);
+        }
+      }
       if (updates.color !== undefined && engine.block.setColor) {
         console.log('🎨 COLOR UPDATE DETECTED!');
         console.log('Original color string:', updates.color);
         
         // Parse color string to CE.SDK color format
-        const colorMatch = updates.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([01]?\.?\d*))?\)/);
-        console.log('Color regex match result:', colorMatch);
+        let colorObj;
+        if (updates.color.startsWith('#')) {
+          // Convert hex to rgba
+          const r = parseInt(updates.color.slice(1, 3), 16) / 255;
+          const g = parseInt(updates.color.slice(3, 5), 16) / 255;
+          const b = parseInt(updates.color.slice(5, 7), 16) / 255;
+          colorObj = { r, g, b, a: 1 };
+        } else {
+          // Parse rgba string
+          const colorMatch = updates.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([01]?\.?\d*))?\)/);
+          if (colorMatch) {
+            const [, r, g, b, a = '1'] = colorMatch;
+            colorObj = {
+              r: parseInt(r) / 255,
+              g: parseInt(g) / 255,
+              b: parseInt(b) / 255,
+              a: parseFloat(a)
+            };
+          }
+        }
         
-        if (colorMatch) {
-          const [, r, g, b, a = '1'] = colorMatch;
-          const colorObj = {
-            r: parseInt(r) / 255,
-            g: parseInt(g) / 255,
-            b: parseInt(b) / 255,
-            a: parseFloat(a)
-          };
+        if (colorObj) {
           console.log('Converted color object for CE.SDK:', colorObj);
-          console.log('RGB values - R:', parseInt(r), 'G:', parseInt(g), 'B:', parseInt(b));
           
           try {
-            // Try both text/color and fill/solid/color paths
-            let colorSuccess = false;
-            
-            // Method 1: Try text/color (traditional text color)
+            // Use the correct CE.SDK API for text color
+            console.log('Setting text color using setTextColor API...');
+            engine.block.setTextColor(id, colorObj);
+            console.log('✅ Text color updated successfully using setTextColor API');
+          } catch (textColorError) {
+            console.warn('setTextColor failed, trying direct setColor:', textColorError);
             try {
               engine.block.setColor(id, 'text/color', colorObj);
-              console.log('✅ Successfully set text/color on block', id);
-              colorSuccess = true;
-            } catch (e) {
-              console.log('text/color failed, trying fill/solid/color:', e.message);
+              console.log('✅ Text color set using direct setColor method');
+            } catch (directError) {
+              console.error('❌ Both setTextColor and setColor methods failed:', directError);
             }
-            
-            // Method 2: Try fill/solid/color (based on PSD data)
-            if (!colorSuccess) {
-              try {
-                engine.block.setColor(id, 'fill/solid/color', colorObj);
-                console.log('✅ Successfully set fill/solid/color on block', id);
-                colorSuccess = true;
-              } catch (e) {
-                console.log('fill/solid/color failed:', e.message);
-              }
-            }
-            
-            if (!colorSuccess) {
-              console.error('❌ Failed to set text color using both methods');
-            }
-          } catch (colorError) {
-            console.error('❌ General error setting text color:', colorError);
           }
         } else {
           console.error('❌ Failed to parse color string:', updates.color);
@@ -2178,6 +2697,439 @@ const FileProcessingContextProvider = ({
     }
   }, [engine, result]);
 
+  // Universal element updater
+  const updateElement = useCallback(async (id: number, updates: any) => {
+    console.log('=== updateElement CALLED ===');
+    console.log('Element ID:', id);
+    console.log('Updates received:', updates);
+    
+    if (!engine || !result) {
+      console.log('❌ Aborting: No engine or result');
+      return;
+    }
+
+    try {
+      // Apply updates using CE.SDK block API based on property paths
+      Object.keys(updates).forEach(key => {
+        const value = updates[key];
+        
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          // Handle nested properties (e.g., textProperties.fontSize)
+          Object.keys(value).forEach(nestedKey => {
+            const nestedValue = value[nestedKey];
+            const propertyPath = mapToSDKProperty(key, nestedKey);
+            
+            if (propertyPath) {
+              applyPropertyUpdate(engine, id, propertyPath, nestedValue);
+            }
+          });
+        } else {
+          // Handle direct properties
+          const propertyPath = mapToSDKProperty(key);
+          if (propertyPath) {
+            applyPropertyUpdate(engine, id, propertyPath, value);
+          }
+        }
+      });
+      
+      // Update the result state to reflect changes
+      setResult(prevResult => {
+        if (!prevResult) return prevResult;
+        
+        const updatedResult = { ...prevResult };
+        
+        // Update the appropriate element array
+        ['textElements', 'imageElements', 'shapeElements'].forEach(arrayName => {
+          const elements = updatedResult[arrayName as keyof typeof updatedResult] as any[];
+          if (elements) {
+            const elementIndex = elements.findIndex(el => el.id === id);
+            if (elementIndex !== -1) {
+              elements[elementIndex] = { ...elements[elementIndex], ...updates };
+            }
+          }
+        });
+        
+        return updatedResult;
+      });
+      
+    } catch (error) {
+      console.error('Error in updateElement:', error);
+    }
+  }, [engine, result]);
+
+  // Helper function to map property names to CE.SDK property paths
+  const mapToSDKProperty = (key: string, nestedKey?: string): string | null => {
+    const propertyMap: { [key: string]: string } = {
+      // Text properties
+      'text': 'text/text',
+      'fontSize': 'text/fontSize',
+      'fontFamily': 'text/typeface',
+      'color': 'text/color',
+      
+      // Position and size
+      'x': 'transform/translation/x',
+      'y': 'transform/translation/y', 
+      'width': 'frame/width',
+      'height': 'frame/height',
+      'opacity': 'opacity',
+      'rotation': 'transform/rotation',
+      
+      // Layer management
+      'alwaysOnBottom': 'alwaysOnBottom',
+      'alwaysOnTop': 'alwaysOnTop',
+      'clipped': 'clipped',
+      'includedInExport': 'includedInExport',
+      'highlightEnabled': 'highlightEnabled',
+      
+      // Blend mode
+      'blendMode': 'blend/mode',
+      
+      // Content fill mode
+      'contentFillMode': 'contentFill/mode',
+      'heightMode': 'height/mode',
+      
+      // Crop properties
+      'cropRotation': 'crop/rotation',
+      'cropScaleRatio': 'crop/scaleRatio',
+      'cropScaleX': 'crop/scaleX',
+      'cropScaleY': 'crop/scaleY',
+      'cropTranslationX': 'crop/translationX',
+      'cropTranslationY': 'crop/translationY',
+      
+      // Drop shadow properties
+      'dropShadowEnabled': 'dropShadow/enabled',
+      'dropShadowColor': 'dropShadow/color',
+      'dropShadowOffsetX': 'dropShadow/offset/x',
+      'dropShadowOffsetY': 'dropShadow/offset/y',
+      'dropShadowBlurX': 'dropShadow/blurRadius/x',
+      'dropShadowBlurY': 'dropShadow/blurRadius/y',
+      'dropShadowClip': 'dropShadow/clip',
+      
+      // Blur properties
+      'blurEnabled': 'blur/enabled',
+      
+      // Fill properties
+      'fillEnabled': 'fill/enabled',
+      
+      // Nested text properties
+      'textProperties.horizontalAlignment': 'text/horizontalAlignment',
+      'textProperties.verticalAlignment': 'text/verticalAlignment',
+      'textProperties.letterSpacing': 'text/letterSpacing',
+      'textProperties.lineHeight': 'text/lineHeight',
+      
+      // Image properties
+      'imageUrl': 'fill/image/imageFileURI',
+      
+      // Legacy crop properties (keeping for backwards compatibility)
+      'crop.scaleX': 'crop/scaleX',
+      'crop.scaleY': 'crop/scaleY',
+      'crop.rotation': 'crop/rotation'
+    };
+    
+    if (nestedKey) {
+      return propertyMap[`${key}.${nestedKey}`] || null;
+    }
+    
+    // If no mapping found, try to use the key directly (for raw property editing)
+    return propertyMap[key] || key;
+  };
+
+  // Helper function to apply property updates with proper type conversion
+  const applyPropertyUpdate = (engine: any, blockId: number, propertyPath: string, value: any) => {
+    try {
+      if (propertyPath === 'text/typeface') {
+        // Special handling for font changes using the new asset registration system
+        const blockType = engine.block.getType(blockId);
+        if (blockType === '//ly.img.ubq/text') {
+          console.log('🔤 FONT: Font change requested for block:', blockId, 'font:', value);
+          
+          try {
+            const LOCAL_FONTS_SOURCE = 'ly.img.local-fonts';
+            
+            // Check if our local font source is available
+            const sources = engine.asset.findAllSources();
+            console.log('🔍 Available asset sources:', sources);
+            
+            if (!sources.includes(LOCAL_FONTS_SOURCE)) {
+              console.error('❌ Local font source not found:', LOCAL_FONTS_SOURCE);
+              return;
+            }
+            
+            // Search for the font in both local sources
+            const fontSources = [LOCAL_FONTS_SOURCE, 'local-hosted-fonts'];
+            console.log('🔍 Searching for font:', value, 'in sources:', fontSources);
+            
+            let fontAsset = null;
+            let foundInSource = null;
+            
+            for (const source of fontSources) {
+              try {
+                // First, let's see what assets are actually available in this source
+                const allFonts = engine.asset.findAssets(source, {
+                  page: 0,
+                  query: '',
+                  perPage: 50
+                });
+                
+                console.log('🔍 Available fonts in', source, ':', allFonts?.assets?.length || 0);
+                if (allFonts?.assets?.length > 0) {
+                  console.log('  Assets:', allFonts.assets.map((asset: any) => ({
+                    id: asset.id,
+                    label: asset.label,
+                    typefaceName: asset.payload?.typeface?.name
+                  })));
+                }
+                
+                if (allFonts && allFonts.assets && allFonts.assets.length > 0) {
+                  // Search by exact match
+                  fontAsset = allFonts.assets.find((asset: any) => {
+                    const typefaceName = asset.payload?.typeface?.name;
+                    const label = asset.label;
+                    return typefaceName === value || 
+                           label === value ||
+                           typefaceName?.toLowerCase() === value.toLowerCase() ||
+                           label?.toLowerCase() === value.toLowerCase();
+                  });
+                  
+                  if (fontAsset) {
+                    foundInSource = source;
+                    console.log('✅ Found font asset by exact match in', source, ':', fontAsset.id, 'label:', fontAsset.label);
+                    break;
+                  }
+                  
+                  // Try partial match
+                  fontAsset = allFonts.assets.find((asset: any) => {
+                    const typefaceName = asset.payload?.typeface?.name;
+                    const label = asset.label;
+                    return typefaceName?.includes(value) || 
+                           label?.includes(value) ||
+                           value?.includes(typefaceName) ||
+                           value?.includes(label);
+                  });
+                  
+                  if (fontAsset) {
+                    foundInSource = source;
+                    console.log('✅ Found font asset by partial match in', source, ':', fontAsset.id, 'label:', fontAsset.label);
+                    break;
+                  }
+                }
+              } catch (searchError) {
+                console.error('❌ Font search error in', source, ':', searchError);
+              }
+            }
+            
+            if (!fontAsset) {
+              console.log('❌ No font asset found in any source for:', value);
+            }
+            
+            // Since asset search is failing, try direct font application with known font definitions
+            if (!fontAsset) {
+              console.log('🔄 Asset search failed, trying direct font application...');
+              
+              // Use our font definitions directly (from the same scope)
+              const fontDefinitions = {
+                'Aviano Sans Thin': {
+                  name: 'Aviano Sans Thin',
+                  fonts: [{
+                    uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Thin.otf',
+                    style: 'normal',
+                    weight: 'thin',
+                    subFamily: 'Thin'
+                  }]
+                },
+                'Aviano Sans Bold': {
+                  name: 'Aviano Sans Bold',
+                  fonts: [{
+                    uri: 'http://localhost:3000/fonts/Aviano%20Sans%20Bold.otf',
+                    style: 'normal',
+                    weight: 'bold',
+                    subFamily: 'Bold'
+                  }]
+                },
+                'Aviano Sans Light': {
+                  name: 'Aviano Sans Light',
+                  fonts: [{
+                    uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Light.otf',
+                    style: 'normal',
+                    weight: 'light',
+                    subFamily: 'Light'
+                  }]
+                },
+                'Aviano Sans Black': {
+                  name: 'Aviano Sans Black',
+                  fonts: [{
+                    uri: 'http://localhost:3000/fonts/Avianos%20Sans%20Black.otf',
+                    style: 'normal',
+                    weight: 'black',
+                    subFamily: 'Black'
+                  }]
+                }
+              };
+              
+              const directFontDef = fontDefinitions[value];
+              if (directFontDef && directFontDef.fonts && directFontDef.fonts[0]) {
+                console.log('✅ Found direct font definition for:', value);
+                const font = directFontDef.fonts[0];
+                
+                try {
+                  // Method 1: Try setFont with URI and typeface
+                  engine.block.setFont(blockId, font.uri, directFontDef);
+                  console.log('✅ Applied font using direct setFont API:', directFontDef.name);
+                  
+                  // Verify the change
+                  const currentFont = engine.block.getString(blockId, 'text/typeface');
+                  console.log('✅ Current font after direct application:', currentFont);
+                  
+                } catch (setFontError) {
+                  console.error('❌ Direct setFont failed:', setFontError);
+                  
+                  // Method 2: Try setting typeface name directly
+                  try {
+                    engine.block.setString(blockId, 'text/typeface', directFontDef.name);
+                    console.log('✅ Applied font using direct string method:', directFontDef.name);
+                  } catch (stringError) {
+                    console.error('❌ Direct string method failed:', stringError);
+                  }
+                }
+              } else {
+                console.log('❌ No direct font definition found for:', value);
+                // Last resort: direct string
+                try {
+                  engine.block.setString(blockId, 'text/typeface', value);
+                  console.log('⚠️ Used last resort string method');
+                } catch (lastResortError) {
+                  console.error('❌ All font methods failed:', lastResortError);
+                }
+              }
+            } else {
+              // Found in assets - use the asset method
+              console.log('🔄 Applying font using setFont API...');
+              const typeface = fontAsset.payload.typeface;
+              const font = typeface.fonts[0];
+              
+              if (font && font.uri) {
+                try {
+                  engine.block.setFont(blockId, font.uri, typeface);
+                  console.log('✅ Font applied using setFont API:', typeface.name);
+                } catch (setFontError) {
+                  console.error('❌ setFont API failed:', setFontError);
+                  try {
+                    engine.block.setString(blockId, 'text/typeface', typeface.name);
+                    console.log('✅ Font applied using fallback method:', typeface.name);
+                  } catch (fallbackError) {
+                    console.error('❌ Fallback font method also failed:', fallbackError);
+                  }
+                }
+              }
+            }
+            
+          } catch (e) {
+            console.error('❌ UNIVERSAL: Font change failed:', e);
+          }
+        } else {
+          engine.block.setString(blockId, propertyPath, value);
+        }
+      } else if (propertyPath.includes('color')) {
+        // Handle color values
+        let colorObj;
+        if (typeof value === 'string') {
+          if (value.startsWith('#')) {
+            // Convert hex to rgba
+            const r = parseInt(value.slice(1, 3), 16) / 255;
+            const g = parseInt(value.slice(3, 5), 16) / 255;
+            const b = parseInt(value.slice(5, 7), 16) / 255;
+            colorObj = { r, g, b, a: 1 };
+          } else if (value.startsWith('rgba')) {
+            // Parse rgba string
+            const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            if (match) {
+              colorObj = {
+                r: parseInt(match[1]) / 255,
+                g: parseInt(match[2]) / 255,
+                b: parseInt(match[3]) / 255,
+                a: match[4] ? parseFloat(match[4]) : 1
+              };
+            }
+          }
+        } else if (typeof value === 'object') {
+          colorObj = value;
+        }
+        
+        if (colorObj) {
+          // Special handling for text color - use setTextColor API
+          if (propertyPath === 'text/color') {
+            const blockType = engine.block.getType(blockId);
+            if (blockType === '//ly.img.ubq/text') {
+              console.log('Setting text color using setTextColor API for text block:', blockId, colorObj);
+              try {
+                // Use the correct CE.SDK API for text color
+                engine.block.setTextColor(blockId, colorObj);
+                console.log('✅ Text color updated successfully using setTextColor API');
+              } catch (textColorError) {
+                console.warn('setTextColor failed, trying direct setColor:', textColorError);
+                engine.block.setColor(blockId, propertyPath, colorObj);
+              }
+            } else {
+              engine.block.setColor(blockId, propertyPath, colorObj);
+            }
+          } else {
+            engine.block.setColor(blockId, propertyPath, colorObj);
+          }
+        }
+      } else if (typeof value === 'string') {
+        engine.block.setString(blockId, propertyPath, value);
+      } else if (typeof value === 'number') {
+        engine.block.setFloat(blockId, propertyPath, value);
+      } else if (typeof value === 'boolean') {
+        engine.block.setBool(blockId, propertyPath, value);
+      }
+    } catch (error) {
+      console.warn(`Failed to set ${propertyPath} to ${value}:`, error);
+    }
+  };
+
+  // Generate batch images with property modifications
+  const generateBatchImages = useCallback(async (items: Array<{[key: string]: any}>): Promise<string[]> => {
+    if (!engine || !result) {
+      throw new Error('Engine or result not available');
+    }
+
+    const generatedUrls: string[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      console.log(`Generating image ${i + 1}/${items.length}`, item);
+
+      try {
+        // Apply all property changes for this item
+        Object.keys(item).forEach(elementId => {
+          const updates = item[elementId];
+          const id = parseInt(elementId);
+          
+          if (!isNaN(id) && updates) {
+            updateElement(id, updates);
+          }
+        });
+
+        // Small delay to ensure changes are applied
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Generate the image
+        const pageBlock = engine.block.findByType('page')[0];
+        if (pageBlock) {
+          const blob = await engine.block.export(pageBlock, 'image/png');
+          const imageUrl = URL.createObjectURL(blob);
+          generatedUrls.push(imageUrl);
+        }
+      } catch (error) {
+        console.error(`Error generating image ${i + 1}:`, error);
+        throw error;
+      }
+    }
+
+    return generatedUrls;
+  }, [engine, result, updateElement]);
+
   const regenerateImage = useCallback(async () => {
     console.log('Regenerate image called, engine:', !!engine);
     
@@ -2272,7 +3224,9 @@ const FileProcessingContextProvider = ({
         updateTextElement,
         updateImageElement,
         updateShapeElement,
+        updateElement,
         regenerateImage,
+        generateBatchImages,
         engine
       }}
     >

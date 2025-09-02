@@ -7,6 +7,7 @@ import AdvancedTextEditor from './AdvancedTextEditor';
 import EditableImageElement from './EditableImageElement';
 import AdvancedImageEditor from './AdvancedImageEditor';
 import EditableShapeElement from './EditableShapeElement';
+import PropertyEditor from '../PropertyEditor';
 import ChevronLeftIcon from './icons/ChevronLeft.svg';
 import NoSSRWrapper from './NoSSRWrapper';
 
@@ -19,11 +20,13 @@ function NewResultScreen() {
     updateTextElement,
     updateImageElement,
     updateShapeElement,
+    updateElement,
     regenerateImage,
+    generateBatchImages,
     isProcessing
   } = useFileProcessing();
 
-  const [activeTab, setActiveTab] = useState<'preview' | 'text' | 'images' | 'shapes'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'text' | 'images' | 'shapes' | 'properties'>('preview');
   const [isRegenerating, setIsRegenerating] = useState(false);
   if (!result) return null;
 
@@ -193,6 +196,11 @@ function NewResultScreen() {
                 label="Formas" 
                 count={result.shapeElements.length}
                 icon="🎨"
+              />
+              <TabButton 
+                id="properties" 
+                label="Editor Avançado" 
+                icon="⚙️"
               />
             </div>
             
@@ -451,6 +459,28 @@ function NewResultScreen() {
                   <p>Este arquivo PSD não contém formas editáveis.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'properties' && (
+            <div style={{ 
+              backgroundColor: '#fff', 
+              borderRadius: '12px', 
+              padding: '2rem',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              border: '1px solid #e0e0e0',
+              minHeight: '600px'
+            }}>
+              <h3 style={{ marginBottom: '1.5rem', color: '#333', fontSize: '1.3rem' }}>
+                Editor Avançado de Propriedades
+              </h3>
+              <NoSSRWrapper>
+                <PropertyEditor
+                  elements={[...result.textElements, ...result.imageElements, ...result.shapeElements]}
+                  onElementUpdate={updateElement}
+                  onGenerateImage={handleRegenerateImage}
+                />
+              </NoSSRWrapper>
             </div>
           )}
 

@@ -1,0 +1,44 @@
+{
+  "source_file": "./teste_font.psd",
+  "extraction_method": "smart_binary_analysis",
+  "summary": {
+    "total_fonts": 3,
+    "total_text_layers": 3,
+    "association_success": 3,
+    "all_fonts_found": [
+      "AvianoSansBold",
+      "AvianoSansThin",
+      "MyriadPro-Regular"
+    ]
+  },
+  "layers": [
+    {
+      "layer_name": "layer_woqm_teste_de_font",
+      "text_content": "WOQM TESTE DE FONT",
+      "confidence": "high",
+      "fonts_found": [
+        "AvianoSansBold"
+      ],
+      "association_method": "specific_mapping"
+    },
+    {
+      "layer_name": "layer_light",
+      "text_content": "LIGHT",
+      "confidence": "high",
+      "fonts_found": [
+        "MyriadPro-Regular"
+      ],
+      "association_method": "specific_mapping"
+    },
+    {
+      "layer_name": "layer_woqm",
+      "text_content": "WOQM",
+      "confidence": "high",
+      "fonts_found": [
+        "AvianoSansThin"
+      ],
+      "association_method": "specific_mapping"
+    }
+  ],
+  "extraction_timestamp": "2025-08-31T18:07:48.901757"
+}

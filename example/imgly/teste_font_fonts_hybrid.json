@@ -1,0 +1,35 @@
+{
+  "source_file": "./teste_font.psd",
+  "extraction_methods": [
+    "cesdk",
+    "binary_analysis"
+  ],
+  "cesdk_results": {
+    "total_text_layers": 2,
+    "layers": [
+      {
+        "layerName": "_light",
+        "text": "LIGHT",
+        "fontName": "Unknown",
+        "fontSize": 62.306915283203125,
+        "fontWeight": "normal",
+        "extractionMethod": "cesdk"
+      },
+      {
+        "layerName": "_bold",
+        "text": "WOQM\rTESTE DE FONT",
+        "fontName": "Unknown",
+        "fontSize": 100.4824447631836,
+        "fontWeight": "normal",
+        "extractionMethod": "cesdk"
+      }
+    ],
+    "unique_fonts": []
+  },
+  "binary_results": {
+    "fonts_found": [],
+    "total_fonts": 0,
+    "extraction_method": "binary_analysis"
+  },
+  "combined_fonts": []
+}

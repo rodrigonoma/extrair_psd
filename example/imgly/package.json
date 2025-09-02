@@ -1,0 +1,20 @@
+{
+  "name": "imgly_novo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@cesdk/node": "^1.57.0",
+    "@imgly/psd-importer": "^0.0.9",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "node-fetch": "^2.7.0",
+    "pngjs": "^7.0.0"
+  }
+}

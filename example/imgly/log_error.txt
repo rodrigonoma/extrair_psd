@@ -1,0 +1,544 @@
+[2025-08-31T20:46:32.830Z] Servidor iniciado em http://localhost:3000
+[2025-08-31T20:46:35.713Z] [BatchSmart] Preparando fontes para C:/imgly_novo_joao/teste_font.psd
+[2025-08-31T20:46:35.714Z] [FontPrep] Extraindo fontes para preparar configuração dinâmica
+[2025-08-31T20:46:35.790Z] [SmartExtraction] Successfully processed 3 layers
+[2025-08-31T20:46:35.791Z] [SmartExtraction] Total fonts: 3
+[2025-08-31T20:46:35.792Z] [SmartExtraction] Fonts: AvianoSansBold, AvianoSansThin, MyriadPro-Regular
+[2025-08-31T20:46:35.792Z] [SmartExtraction] Associations: 3/3
+[2025-08-31T20:46:35.793Z] [FontPrep] Fontes encontradas: AvianoSansBold, AvianoSansThin, MyriadPro-Regular
+[2025-08-31T20:46:35.794Z] [FontScan] Encontradas 17 fontes: AvianoSansBold, AvianoSansBlack, AvianoSansLight, AvianoSansThin, bebasneue-bold, bebasneue-book, bebasneue-light, bebasneue-regular, bebasneue-thin, inter-28pt, inter_24pt-bold, inter_24pt-light, inter_24pt-regular, inter_28pt-bold, montserrat-bold, montserrat-light, montserrat-regular
+[2025-08-31T20:46:35.795Z] [FontMapping] Usando fallback para MyriadPro-Regular -> Inter
+[2025-08-31T20:46:35.795Z] [FontPrep] Mapeado: AvianoSansBold -> Aviano Sans
+[2025-08-31T20:46:35.795Z] [FontPrep] Mapeado: AvianoSansThin -> Aviano Sans
+[2025-08-31T20:46:35.796Z] [FontPrep] Mapeado: MyriadPro-Regular -> Inter
+[2025-08-31T20:46:35.796Z] [BatchSmart] Configuração dinâmica criada com 3 fontes
+[2025-08-31T20:46:36.220Z] [BatchSmart] Processando item 1/1 com fontes dinâmicas
+[2025-08-31T20:46:36.221Z] [FontMapping] ===== APLICANDO MAPEAMENTO DE FONTES (v2) =====
+[2025-08-31T20:46:36.222Z] [FontMapping] Dados originais: {
+  "_light": {
+    "text/text": "ULTIMO TESTE",
+    "text/typeface": "aviano-sans-light"
+  },
+  "_bold": {
+    "text/text": "WQM",
+    "text/typeface": "aviano-sans-bold"
+  }
+}
+[2025-08-31T20:46:36.222Z] [FontMapping] ✅ _light: Mapeado 'aviano-sans-light' -> 'avianos-sans-light'
+[2025-08-31T20:46:36.223Z] [FontMapping] ✅ _bold: Mapeado 'aviano-sans-bold' -> 'aviano-sans-bold'
+[2025-08-31T20:46:36.223Z] [FontMapping] 📋 Dados finais mapeados: {
+  "_light": {
+    "text/text": "ULTIMO TESTE",
+    "text/typeface": "avianos-sans-light"
+  },
+  "_bold": {
+    "text/text": "WQM",
+    "text/typeface": "aviano-sans-bold"
+  }
+}
+[2025-08-31T20:46:36.224Z] [FontMapping] ===== MAPEAMENTO CONCLUÍDO (v2) =====
+[2025-08-31T20:46:36.224Z] [generateSingleImage] Iniciando geração para: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:46:36.225Z] Tamanho do psdArrayBuffer: 271079 bytes
+[2025-08-31T20:46:36.236Z] Tipo de psdParser: object
+[2025-08-31T20:46:36.553Z] Todos os blocos na cena (ID, Nome, Tipo): [
+  {
+    "id": 0,
+    "name": "",
+    "type": "//ly.img.ubq/scene"
+  },
+  {
+    "id": 1,
+    "name": "",
+    "type": "//ly.img.ubq/camera"
+  },
+  {
+    "id": 2,
+    "name": "",
+    "type": "//ly.img.ubq/stack"
+  },
+  {
+    "id": 3,
+    "name": "ROOT",
+    "type": "//ly.img.ubq/page"
+  },
+  {
+    "id": 5,
+    "name": "_light",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 11534351,
+    "name": "_fundo",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 14680072,
+    "name": "_bold",
+    "type": "//ly.img.ubq/text"
+  }
+]
+[2025-08-31T20:46:36.554Z] [ApplyData] 🔧 Processando bloco: _light
+[2025-08-31T20:46:36.554Z] [ApplyData] Camada '_light' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T20:46:36.558Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'ULTIMO TESTE'
+[2025-08-31T20:46:36.558Z] [ApplyData] Propriedade string 'text/typeface' atualizada para: 'avianos-sans-light'
+[2025-08-31T20:46:36.559Z] [ApplyData] 🔧 Processando bloco: _bold
+[2025-08-31T20:46:36.559Z] [ApplyData] Camada '_bold' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T20:46:36.561Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'WQM'
+[2025-08-31T20:46:36.562Z] [ApplyData] Propriedade string 'text/typeface' atualizada para: 'aviano-sans-bold'
+[2025-08-31T20:46:36.562Z] [ApplyData] 🏁 Finalizando aplicação de dados, iniciando exportação...
+[2025-08-31T20:46:36.563Z] [PreExport] Bloco _light (5): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T20:46:36.563Z] [PreExport] Texto do bloco _light: "ULTIMO TESTE"
+[2025-08-31T20:46:36.564Z] [PreExport] Bloco _bold (14680072): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T20:46:36.564Z] [PreExport] Texto do bloco _bold: "WQM"
+[2025-08-31T20:46:36.564Z] [Export] 📤 Iniciando exportação da página 3
+[2025-08-31T20:46:36.850Z] Tentando salvar imagem em: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:46:36.851Z] fs.writeFileSync executado para: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:46:36.852Z] Arquivo C:/imgly_novo_joao/gerados/ultimo_0.png existe após escrita.
+[2025-08-31T20:46:36.852Z] Imagem gerada com sucesso em: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:48:23.645Z] Servidor iniciado em http://localhost:3000
+[2025-08-31T20:48:35.266Z] [BatchSmart] Preparando fontes para C:/imgly_novo_joao/teste_font.psd
+[2025-08-31T20:48:35.268Z] [FontPrep] Extraindo fontes para preparar configuração dinâmica
+[2025-08-31T20:48:35.380Z] [SmartExtraction] Successfully processed 3 layers
+[2025-08-31T20:48:35.380Z] [SmartExtraction] Total fonts: 3
+[2025-08-31T20:48:35.381Z] [SmartExtraction] Fonts: AvianoSansBold, AvianoSansThin, MyriadPro-Regular
+[2025-08-31T20:48:35.381Z] [SmartExtraction] Associations: 3/3
+[2025-08-31T20:48:35.382Z] [FontPrep] Fontes encontradas: AvianoSansBold, AvianoSansThin, MyriadPro-Regular
+[2025-08-31T20:48:35.384Z] [FontScan] Encontradas 17 fontes: AvianoSansBold, AvianoSansBlack, AvianoSansLight, AvianoSansThin, bebasneue-bold, bebasneue-book, bebasneue-light, bebasneue-regular, bebasneue-thin, inter-28pt, inter_24pt-bold, inter_24pt-light, inter_24pt-regular, inter_28pt-bold, montserrat-bold, montserrat-light, montserrat-regular
+[2025-08-31T20:48:35.384Z] [FontMapping] Usando fallback para MyriadPro-Regular -> Inter
+[2025-08-31T20:48:35.385Z] [FontPrep] Mapeado: AvianoSansBold -> Aviano Sans
+[2025-08-31T20:48:35.385Z] [FontPrep] Mapeado: AvianoSansThin -> Aviano Sans
+[2025-08-31T20:48:35.386Z] [FontPrep] Mapeado: MyriadPro-Regular -> Inter
+[2025-08-31T20:48:35.387Z] [BatchSmart] Configuração dinâmica criada com 3 fontes
+[2025-08-31T20:48:37.749Z] [BatchSmart] Processando item 1/1 com fontes dinâmicas
+[2025-08-31T20:48:37.750Z] [FontMapping] ===== APLICANDO MAPEAMENTO DE FONTES (v2) =====
+[2025-08-31T20:48:37.750Z] [FontMapping] Dados originais: {
+  "_light": {
+    "text/text": "ULTIMO TESTE",
+    "text/typeface": "aviano-sans-light"
+  },
+  "_bold": {
+    "text/text": "WQM",
+    "text/typeface": "aviano-sans-bold"
+  }
+}
+[2025-08-31T20:48:37.751Z] [FontMapping] ✅ _light: Mapeado 'aviano-sans-light' -> 'avianos-sans-light'
+[2025-08-31T20:48:37.752Z] [FontMapping] ✅ _bold: Mapeado 'aviano-sans-bold' -> 'aviano-sans-bold'
+[2025-08-31T20:48:37.752Z] [FontMapping] 📋 Dados finais mapeados: {
+  "_light": {
+    "text/text": "ULTIMO TESTE",
+    "text/typeface": "avianos-sans-light"
+  },
+  "_bold": {
+    "text/text": "WQM",
+    "text/typeface": "aviano-sans-bold"
+  }
+}
+[2025-08-31T20:48:37.753Z] [FontMapping] ===== MAPEAMENTO CONCLUÍDO (v2) =====
+[2025-08-31T20:48:37.754Z] [generateSingleImage] Iniciando geração para: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:48:37.754Z] Tamanho do psdArrayBuffer: 271079 bytes
+[2025-08-31T20:48:37.782Z] Tipo de psdParser: object
+[2025-08-31T20:48:38.463Z] Todos os blocos na cena (ID, Nome, Tipo): [
+  {
+    "id": 0,
+    "name": "",
+    "type": "//ly.img.ubq/scene"
+  },
+  {
+    "id": 1,
+    "name": "",
+    "type": "//ly.img.ubq/camera"
+  },
+  {
+    "id": 2,
+    "name": "",
+    "type": "//ly.img.ubq/stack"
+  },
+  {
+    "id": 3,
+    "name": "ROOT",
+    "type": "//ly.img.ubq/page"
+  },
+  {
+    "id": 5,
+    "name": "_light",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 11534351,
+    "name": "_fundo",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 14680072,
+    "name": "_bold",
+    "type": "//ly.img.ubq/text"
+  }
+]
+[2025-08-31T20:48:38.464Z] [ApplyData] 🔧 Processando bloco: _light
+[2025-08-31T20:48:38.465Z] [ApplyData] Camada '_light' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T20:48:38.470Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'ULTIMO TESTE'
+[2025-08-31T20:48:38.471Z] [ApplyData] Propriedade string 'text/typeface' atualizada para: 'avianos-sans-light'
+[2025-08-31T20:48:38.473Z] [ApplyData] 🔧 Processando bloco: _bold
+[2025-08-31T20:48:38.473Z] [ApplyData] Camada '_bold' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T20:48:38.475Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'WQM'
+[2025-08-31T20:48:38.476Z] [ApplyData] Propriedade string 'text/typeface' atualizada para: 'aviano-sans-bold'
+[2025-08-31T20:48:38.477Z] [ApplyData] 🏁 Finalizando aplicação de dados, iniciando exportação...
+[2025-08-31T20:48:38.478Z] [PreExport] Bloco _light (5): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T20:48:38.479Z] [PreExport] Texto do bloco _light: "ULTIMO TESTE"
+[2025-08-31T20:48:38.480Z] [PreExport] Bloco _bold (14680072): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T20:48:38.480Z] [PreExport] Texto do bloco _bold: "WQM"
+[2025-08-31T20:48:38.481Z] [Export] 📤 Iniciando exportação da página 3
+[2025-08-31T20:48:38.921Z] Tentando salvar imagem em: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:48:38.923Z] fs.writeFileSync executado para: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:48:38.924Z] Arquivo C:/imgly_novo_joao/gerados/ultimo_0.png existe após escrita.
+[2025-08-31T20:48:38.924Z] Imagem gerada com sucesso em: C:/imgly_novo_joao/gerados/ultimo_0.png
+[2025-08-31T20:59:02.034Z] Servidor iniciado em http://localhost:3000
+[2025-08-31T20:59:24.126Z] [BatchSmart] Erro no processamento: instance.asset.addFont is not a function
+Stack: TypeError: instance.asset.addFont is not a function
+    at C:\imgly_novo_joao\index.js:343:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-08-31T21:03:45.531Z] Servidor iniciado em http://localhost:3000
+[2025-08-31T21:03:51.640Z] [BatchSmart] Erro no processamento: Missing required field 'subFamily' in font
+
+Stack: Error: Missing required field 'subFamily' in font
+
+    at unpackResult (C:\imgly_novo_joao\node_modules\@cesdk\node\index.js:1:169314)
+    at AssetAPI.addAssetToSource (C:\imgly_novo_joao\node_modules\@cesdk\node\index.js:1:174008)
+    at C:\imgly_novo_joao\index.js:378:28
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-08-31T21:04:56.633Z] Servidor iniciado em http://localhost:3000
+[2025-08-31T21:05:00.377Z] [FontAsset] Família de fontes registrada: Aviano Sans
+[2025-08-31T21:05:00.378Z] [FontAsset] Família de fontes registrada: Avianos Sans
+[2025-08-31T21:05:00.379Z] [FontAsset] Família de fontes registrada: BebasNeue
+[2025-08-31T21:05:00.379Z] [FontAsset] Família de fontes registrada: BebasNeue Book
+[2025-08-31T21:05:00.380Z] [FontAsset] Família de fontes registrada: Inter 28pt
+[2025-08-31T21:05:00.380Z] [FontAsset] Família de fontes registrada: Inter_24pt-Bold
+[2025-08-31T21:05:00.381Z] [FontAsset] Família de fontes registrada: Inter_24pt-Light
+[2025-08-31T21:05:00.381Z] [FontAsset] Família de fontes registrada: Inter_24pt-Regular
+[2025-08-31T21:05:00.382Z] [FontAsset] Família de fontes registrada: Inter_28pt-Bold
+[2025-08-31T21:05:00.383Z] [FontAsset] Família de fontes registrada: Montserrat-Bold
+[2025-08-31T21:05:00.384Z] [FontAsset] Família de fontes registrada: Montserrat-Light
+[2025-08-31T21:05:00.384Z] [FontAsset] Família de fontes registrada: Montserrat-Regular
+[2025-08-31T21:05:00.385Z] [BatchSmart] Processando item 1/1
+[2025-08-31T21:05:00.385Z] [generateSingleImage] Iniciando geração para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:05:00.394Z] Tamanho do psdArrayBuffer: 2868603 bytes
+[2025-08-31T21:05:00.425Z] Tipo de psdParser: object
+[2025-08-31T21:05:00.511Z] Erro ao gerar imagem: The default typeface library ly.img.google-fonts is not available.
+Nome do Erro: Error
+Erro Completo: Error: The default typeface library ly.img.google-fonts is not available.
+Stack: Error: The default typeface library ly.img.google-fonts is not available.
+    at a.ia [as fontResolver] (C:\imgly_novo_joao\node_modules\@imgly\psd-importer\dist\index.cjs:1:256024)
+    at a.createTextBlock (C:\imgly_novo_joao\node_modules\@imgly\psd-importer\dist\index.cjs:1:264837)
+    at a.traverseNode (C:\imgly_novo_joao\node_modules\@imgly\psd-importer\dist\index.cjs:1:259297)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async a.traverseNode (C:\imgly_novo_joao\node_modules\@imgly\psd-importer\dist\index.cjs:1:260136)
+    at async a.traverseNode (C:\imgly_novo_joao\node_modules\@imgly\psd-importer\dist\index.cjs:1:260136)
+    at async a.parse (C:\imgly_novo_joao\node_modules\@imgly\psd-importer\dist\index.cjs:1:263012)
+    at async generateSingleImage (C:\imgly_novo_joao\index.js:147:5)
+    at async C:\imgly_novo_joao\index.js:400:26
+[2025-08-31T21:06:07.168Z] Servidor iniciado em http://localhost:3000
+[2025-08-31T21:06:15.524Z] [FontAsset] Família de fontes registrada: Aviano Sans
+[2025-08-31T21:06:15.525Z] [FontAsset] Família de fontes registrada: Avianos Sans
+[2025-08-31T21:06:15.526Z] [FontAsset] Família de fontes registrada: BebasNeue
+[2025-08-31T21:06:15.527Z] [FontAsset] Família de fontes registrada: BebasNeue Book
+[2025-08-31T21:06:15.527Z] [FontAsset] Família de fontes registrada: Inter 28pt
+[2025-08-31T21:06:15.528Z] [FontAsset] Família de fontes registrada: Inter_24pt-Bold
+[2025-08-31T21:06:15.528Z] [FontAsset] Família de fontes registrada: Inter_24pt-Light
+[2025-08-31T21:06:15.529Z] [FontAsset] Família de fontes registrada: Inter_24pt-Regular
+[2025-08-31T21:06:15.529Z] [FontAsset] Família de fontes registrada: Inter_28pt-Bold
+[2025-08-31T21:06:15.530Z] [FontAsset] Família de fontes registrada: Montserrat-Bold
+[2025-08-31T21:06:15.530Z] [FontAsset] Família de fontes registrada: Montserrat-Light
+[2025-08-31T21:06:15.531Z] [FontAsset] Família de fontes registrada: Montserrat-Regular
+[2025-08-31T21:06:15.531Z] [BatchSmart] Processando item 1/1
+[2025-08-31T21:06:15.532Z] [generateSingleImage] Iniciando geração para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:06:15.535Z] Tamanho do psdArrayBuffer: 2868603 bytes
+[2025-08-31T21:06:15.586Z] Tipo de psdParser: object
+[2025-08-31T21:06:16.936Z] Todos os blocos na cena (ID, Nome, Tipo): [
+  {
+    "id": 0,
+    "name": "",
+    "type": "//ly.img.ubq/scene"
+  },
+  {
+    "id": 1,
+    "name": "",
+    "type": "//ly.img.ubq/camera"
+  },
+  {
+    "id": 2,
+    "name": "",
+    "type": "//ly.img.ubq/stack"
+  },
+  {
+    "id": 3,
+    "name": "ROOT",
+    "type": "//ly.img.ubq/page"
+  },
+  {
+    "id": 5,
+    "name": "_base",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 8,
+    "name": "_titulo",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 25,
+    "name": "_contorno",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 28,
+    "name": "_frase3",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 47,
+    "name": "_img",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 11534375,
+    "name": "_frase1",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 12582931,
+    "name": "_fundo_status1",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 12582934,
+    "name": "_logo_produto",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 12582947,
+    "name": "_apartamentosde",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 13631499,
+    "name": "_status1",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 13631501,
+    "name": "_logo_cliente",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 15728683,
+    "name": "_contorno_frase1",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 26214437,
+    "name": "_comando",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 30408746,
+    "name": "sombra",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 40894480,
+    "name": "_frase2",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 53477391,
+    "name": "_contorno-comando",
+    "type": "//ly.img.ubq/graphic"
+  }
+]
+[2025-08-31T21:06:16.936Z] [ApplyData] 🔧 Processando bloco: _titulo
+[2025-08-31T21:06:16.938Z] [ApplyData] Camada '_titulo' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T21:06:16.945Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'Este é o Título Principal'
+[2025-08-31T21:06:16.946Z] [ApplyData] Erro ao definir propriedade 'text/fontFileUri' para _titulo: Setting the "text/fontFileUri" property directly is unsupported. Use the setFont API instead.
+
+[2025-08-31T21:06:16.946Z] [ApplyData] 🔧 Processando bloco: _frase1
+[2025-08-31T21:06:16.947Z] [ApplyData] Camada '_frase1' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T21:06:16.949Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'Esta é uma frase com outra fonte.'
+[2025-08-31T21:06:16.950Z] [ApplyData] Erro ao definir propriedade 'text/fontFileUri' para _frase1: Setting the "text/fontFileUri" property directly is unsupported. Use the setFont API instead.
+
+[2025-08-31T21:06:16.950Z] [ApplyData] 🔧 Processando bloco: _img
+[2025-08-31T21:06:16.951Z] [ApplyData] Camada '_img' encontrada. Tipo: //ly.img.ubq/graphic
+[2025-08-31T21:06:16.951Z] [ApplyData] Imagem da camada '_img' atualizada para: 'file:///C:/imgly_novo_joao/assets/arara.jpeg'
+[2025-08-31T21:06:16.952Z] [ApplyData] 🏁 Finalizando aplicação de dados, iniciando exportação...
+[2025-08-31T21:06:16.952Z] [PreExport] Bloco _titulo (8): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.953Z] [PreExport] Texto do bloco _titulo: "Este é o Título Principal"
+[2025-08-31T21:06:16.953Z] [PreExport] Bloco _frase3 (28): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.954Z] [PreExport] Texto do bloco _frase3: "TRAVESSA Rua Jorge Americano"
+[2025-08-31T21:06:16.954Z] [PreExport] Bloco _frase1 (11534375): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.954Z] [PreExport] Texto do bloco _frase1: "Esta é uma frase com outra fonte."
+[2025-08-31T21:06:16.955Z] [PreExport] Bloco _apartamentosde (12582947): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.955Z] [PreExport] Texto do bloco _apartamentosde: "APARTAMENTOS DE"
+[2025-08-31T21:06:16.956Z] [PreExport] Bloco _status1 (13631499): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.956Z] [PreExport] Texto do bloco _status1: "OBRAS INICIADAS"
+[2025-08-31T21:06:16.957Z] [PreExport] Bloco _comando (26214437): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.957Z] [PreExport] Texto do bloco _comando: "157 A 283M²  |  3 SUÍTES"
+[2025-08-31T21:06:16.958Z] [PreExport] Bloco _frase2 (40894480): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:06:16.959Z] [PreExport] Texto do bloco _frase2: "RUA ACOPIARA, 70"
+[2025-08-31T21:06:16.959Z] [Export] 📤 Iniciando exportação da página 3
+[2025-08-31T21:06:18.016Z] Tentando salvar imagem em: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:06:18.020Z] fs.writeFileSync executado para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:06:18.020Z] Arquivo C:/imgly_novo_joao/gerados/final_0.png existe após escrita.
+[2025-08-31T21:06:18.021Z] Imagem gerada com sucesso em: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:07:48.817Z] [PerLayerExtraction] Iniciando extração por camada para: ./teste_font.psd
+[2025-08-31T21:07:48.910Z] [SmartExtraction] Successfully processed 3 layers
+[2025-08-31T21:07:48.911Z] [SmartExtraction] Total fonts: 3
+[2025-08-31T21:07:48.912Z] [SmartExtraction] Fonts: AvianoSansBold, AvianoSansThin, MyriadPro-Regular
+[2025-08-31T21:07:48.912Z] [SmartExtraction] Associations: 3/3
+[2025-08-31T21:07:48.913Z] [SmartExtraction] Extração concluída. 3 camadas, 3 fontes, 3 associações
+[2025-08-31T21:09:10.747Z] [FontAsset] Família de fontes registrada: Aviano Sans
+[2025-08-31T21:09:10.749Z] [FontAsset] Família de fontes registrada: Avianos Sans
+[2025-08-31T21:09:10.750Z] [FontAsset] Família de fontes registrada: BebasNeue
+[2025-08-31T21:09:10.750Z] [FontAsset] Família de fontes registrada: BebasNeue Book
+[2025-08-31T21:09:10.751Z] [FontAsset] Família de fontes registrada: Inter 28pt
+[2025-08-31T21:09:10.751Z] [FontAsset] Família de fontes registrada: Inter_24pt-Bold
+[2025-08-31T21:09:10.751Z] [FontAsset] Família de fontes registrada: Inter_24pt-Light
+[2025-08-31T21:09:10.752Z] [FontAsset] Família de fontes registrada: Inter_24pt-Regular
+[2025-08-31T21:09:10.752Z] [FontAsset] Família de fontes registrada: Inter_28pt-Bold
+[2025-08-31T21:09:10.753Z] [FontAsset] Família de fontes registrada: Montserrat-Bold
+[2025-08-31T21:09:10.753Z] [FontAsset] Família de fontes registrada: Montserrat-Light
+[2025-08-31T21:09:10.754Z] [FontAsset] Família de fontes registrada: Montserrat-Regular
+[2025-08-31T21:09:10.755Z] [BatchSmart] Processando item 1/1
+[2025-08-31T21:09:10.755Z] [generateSingleImage] Iniciando geração para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:09:10.757Z] Tamanho do psdArrayBuffer: 271079 bytes
+[2025-08-31T21:09:10.771Z] Tipo de psdParser: object
+[2025-08-31T21:09:11.394Z] Todos os blocos na cena (ID, Nome, Tipo): [
+  {
+    "id": 0,
+    "name": "",
+    "type": "//ly.img.ubq/scene"
+  },
+  {
+    "id": 1,
+    "name": "",
+    "type": "//ly.img.ubq/camera"
+  },
+  {
+    "id": 2,
+    "name": "",
+    "type": "//ly.img.ubq/stack"
+  },
+  {
+    "id": 3,
+    "name": "ROOT",
+    "type": "//ly.img.ubq/page"
+  },
+  {
+    "id": 5,
+    "name": "_light",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 11534351,
+    "name": "_fundo",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 14680072,
+    "name": "_bold",
+    "type": "//ly.img.ubq/text"
+  }
+]
+[2025-08-31T21:09:11.395Z] [ApplyData] 🔧 Processando bloco: _bold
+[2025-08-31T21:09:11.397Z] [ApplyData] Camada '_bold' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T21:09:11.402Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'WQM'
+[2025-08-31T21:09:11.403Z] [ApplyData] Erro ao definir propriedade 'text/fontFileUri' para _bold: Setting the "text/fontFileUri" property directly is unsupported. Use the setFont API instead.
+
+[2025-08-31T21:09:11.404Z] [ApplyData] 🔧 Processando bloco: _frase1
+[2025-08-31T21:09:11.404Z] [ApplyData] Camada com o nome '_frase1' não encontrada no PSD.
+[2025-08-31T21:09:11.405Z] [ApplyData] 🔧 Processando bloco: _img
+[2025-08-31T21:09:11.405Z] [ApplyData] Camada com o nome '_img' não encontrada no PSD.
+[2025-08-31T21:09:11.406Z] [ApplyData] 🏁 Finalizando aplicação de dados, iniciando exportação...
+[2025-08-31T21:09:11.407Z] [PreExport] Bloco _light (5): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:09:11.408Z] [PreExport] Texto do bloco _light: "LIGHT"
+[2025-08-31T21:09:11.408Z] [PreExport] Bloco _bold (14680072): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:09:11.409Z] [PreExport] Texto do bloco _bold: "WQM"
+[2025-08-31T21:09:11.409Z] [Export] 📤 Iniciando exportação da página 3
+[2025-08-31T21:09:11.882Z] Tentando salvar imagem em: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:09:11.884Z] fs.writeFileSync executado para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:09:11.884Z] Arquivo C:/imgly_novo_joao/gerados/final_0.png existe após escrita.
+[2025-08-31T21:09:11.885Z] Imagem gerada com sucesso em: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:15:19.879Z] [FontAsset] Família de fontes registrada: Aviano Sans
+[2025-08-31T21:15:19.881Z] [FontAsset] Família de fontes registrada: Avianos Sans
+[2025-08-31T21:15:19.882Z] [FontAsset] Família de fontes registrada: BebasNeue
+[2025-08-31T21:15:19.883Z] [FontAsset] Família de fontes registrada: BebasNeue Book
+[2025-08-31T21:15:19.884Z] [FontAsset] Família de fontes registrada: Inter 28pt
+[2025-08-31T21:15:19.885Z] [FontAsset] Família de fontes registrada: Inter_24pt-Bold
+[2025-08-31T21:15:19.886Z] [FontAsset] Família de fontes registrada: Inter_24pt-Light
+[2025-08-31T21:15:19.887Z] [FontAsset] Família de fontes registrada: Inter_24pt-Regular
+[2025-08-31T21:15:19.888Z] [FontAsset] Família de fontes registrada: Inter_28pt-Bold
+[2025-08-31T21:15:19.888Z] [FontAsset] Família de fontes registrada: Montserrat-Bold
+[2025-08-31T21:15:19.889Z] [FontAsset] Família de fontes registrada: Montserrat-Light
+[2025-08-31T21:15:19.890Z] [FontAsset] Família de fontes registrada: Montserrat-Regular
+[2025-08-31T21:15:19.891Z] [BatchSmart] Processando item 1/1
+[2025-08-31T21:15:19.892Z] [generateSingleImage] Iniciando geração para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:15:19.894Z] Tamanho do psdArrayBuffer: 271079 bytes
+[2025-08-31T21:15:19.907Z] Tipo de psdParser: object
+[2025-08-31T21:15:20.363Z] Todos os blocos na cena (ID, Nome, Tipo): [
+  {
+    "id": 0,
+    "name": "",
+    "type": "//ly.img.ubq/scene"
+  },
+  {
+    "id": 1,
+    "name": "",
+    "type": "//ly.img.ubq/camera"
+  },
+  {
+    "id": 2,
+    "name": "",
+    "type": "//ly.img.ubq/stack"
+  },
+  {
+    "id": 3,
+    "name": "ROOT",
+    "type": "//ly.img.ubq/page"
+  },
+  {
+    "id": 5,
+    "name": "_light",
+    "type": "//ly.img.ubq/text"
+  },
+  {
+    "id": 11534351,
+    "name": "_fundo",
+    "type": "//ly.img.ubq/graphic"
+  },
+  {
+    "id": 14680072,
+    "name": "_bold",
+    "type": "//ly.img.ubq/text"
+  }
+]
+[2025-08-31T21:15:20.364Z] [ApplyData] 🔧 Processando bloco: _bold
+[2025-08-31T21:15:20.366Z] [ApplyData] Camada '_bold' encontrada. Tipo: //ly.img.ubq/text
+[2025-08-31T21:15:20.370Z] [ApplyData] Propriedade string 'text/text' atualizada para: 'WQM'
+[2025-08-31T21:15:20.371Z] [ApplyData] Erro ao definir propriedade 'text/fontFamily' para _bold: Member "fontFamily" for type "ubq/designblocks/Text" not found for given key path "fontFamily".
+Valid members for key path "*" are: 
+"text", "fontFileUri", "typeface", "externalReference", "fontSize", "horizontalAlignment", "verticalAlignment", "lineHeight", "letterSpacing", "paragraphSpacing", "clipLinesOutsideOfFrame", "automaticFontSizeEnabled", "minAutomaticFontSize", "maxAutomaticFontSize".
+
+[2025-08-31T21:15:20.372Z] [ApplyData] Erro ao definir propriedade 'text/fontWeight' para _bold: Member "fontWeight" for type "ubq/designblocks/Text" not found for given key path "fontWeight".
+Valid members for key path "*" are: 
+"text", "fontFileUri", "typeface", "externalReference", "fontSize", "horizontalAlignment", "verticalAlignment", "lineHeight", "letterSpacing", "paragraphSpacing", "clipLinesOutsideOfFrame", "automaticFontSizeEnabled", "minAutomaticFontSize", "maxAutomaticFontSize".
+
+[2025-08-31T21:15:20.373Z] [ApplyData] 🔧 Processando bloco: _thin
+[2025-08-31T21:15:20.373Z] [ApplyData] Camada com o nome '_thin' não encontrada no PSD.
+[2025-08-31T21:15:20.373Z] [ApplyData] 🏁 Finalizando aplicação de dados, iniciando exportação...
+[2025-08-31T21:15:20.374Z] [PreExport] Bloco _light (5): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:15:20.374Z] [PreExport] Texto do bloco _light: "LIGHT"
+[2025-08-31T21:15:20.375Z] [PreExport] Bloco _bold (14680072): tipo=//ly.img.ubq/text, visível=true
+[2025-08-31T21:15:20.375Z] [PreExport] Texto do bloco _bold: "WQM"
+[2025-08-31T21:15:20.375Z] [Export] 📤 Iniciando exportação da página 3
+[2025-08-31T21:15:20.737Z] Tentando salvar imagem em: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:15:20.739Z] fs.writeFileSync executado para: C:/imgly_novo_joao/gerados/final_0.png
+[2025-08-31T21:15:20.740Z] Arquivo C:/imgly_novo_joao/gerados/final_0.png existe após escrita.
+[2025-08-31T21:15:20.740Z] Imagem gerada com sucesso em: C:/imgly_novo_joao/gerados/final_0.png

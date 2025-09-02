@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebSearch",
+      "WebSearch",
+      "WebFetch(domain:psd-tools.readthedocs.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(python:*)",
+      "Bash(pip show:*)",
+      "Bash(npm:*)",
+      "Bash(psdtxtractor:*)",
+      "Bash(where psdtxtractor)",
+      "Read(C:\\Users\\rodrigo.noma\\Downloads/**)",
+      "WebFetch(domain:developer.adobe.com)",
+      "Read(C:\\Users\\rodrigo.noma\\Downloads/**)",
+      "Bash(pip install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -4,7 +4,9 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:img.ly)",
-      "Bash(dir)"
+      "Bash(dir)",
+      "Bash(dir:*)",
+      "WebFetch(domain:docs.img.ly)"
     ],
     "deny": [],
     "ask": []

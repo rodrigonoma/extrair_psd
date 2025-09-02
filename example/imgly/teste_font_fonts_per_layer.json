@@ -1,0 +1,66 @@
+{
+  "source_file": "./teste_font.psd",
+  "psd_info": {
+    "width": 1080,
+    "height": 1080,
+    "total_layers": 3
+  },
+  "extraction_method": "layer_specific_analysis",
+  "summary": {
+    "total_text_layers": 2,
+    "total_unique_fonts": 6,
+    "all_fonts_found": [
+      "TaggedBlock",
+      "blocks",
+      "object",
+      "psd",
+      "tagged",
+      "tools"
+    ]
+  },
+  "layers": [
+    {
+      "layer_index": 2,
+      "layer_name": "_bold",
+      "text_content": "WOQM\rTESTE DE FONT",
+      "fonts_found": [
+        "psd",
+        "tools",
+        "tagged",
+        "blocks",
+        "TaggedBlock",
+        "object"
+      ],
+      "font_count": 6,
+      "visible": true,
+      "bbox": {
+        "left": 108,
+        "top": 414,
+        "right": 974,
+        "bottom": 593
+      }
+    },
+    {
+      "layer_index": 3,
+      "layer_name": "_light",
+      "text_content": "LIGHT",
+      "fonts_found": [
+        "psd",
+        "tools",
+        "tagged",
+        "blocks",
+        "TaggedBlock",
+        "object"
+      ],
+      "font_count": 6,
+      "visible": true,
+      "bbox": {
+        "left": 445,
+        "top": 655,
+        "right": 642,
+        "bottom": 692
+      }
+    }
+  ],
+  "extraction_timestamp": "2025-08-31T16:26:25.230037"
+}

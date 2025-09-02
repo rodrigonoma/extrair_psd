@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir)",
+      "Bash(dir:*)",
+      "Bash(copy \"extrai psd\\scan_fonts_binary.py\" scan_fonts_binary.py)",
+      "Bash(python:*)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
