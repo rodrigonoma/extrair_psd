@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import AppLayout from '../components/Layout/AppLayout';
 import './root.css';
 
 export const metadata: Metadata = {
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>{children}</body>
+      <body suppressHydrationWarning={true}>
+        <AppLayout>{children}</AppLayout>
+      </body>
     </html>
   );
 }

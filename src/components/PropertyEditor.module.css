@@ -1,0 +1,214 @@
+/* Estrutura Principal */
+.wrapper {
+  display: flex;
+  height: 100%;
+  background-color: #f8f9fa;
+}
+
+.elementListPanel {
+  width: 35%;
+  border-right: 1px solid #dee2e6;
+  padding: 1.5rem;
+  overflow-y: auto;
+  background-color: #fff;
+}
+
+.editorPanel {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* Painel da Lista de Elementos (Esquerda) */
+.listHeader {
+  margin-bottom: 1.5rem;
+}
+
+.listTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+.searchInput:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.elementList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.elementCard {
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #fff;
+}
+
+.elementCard:hover {
+  background-color: #f8f9fa;
+  border-color: #c_c_c;
+}
+
+.elementCard.selected {
+  background-color: #e3f2fd;
+  border-color: #007bff;
+  box-shadow: 0 0 0 1px #007bff;
+}
+
+.elementName {
+  font-weight: 600;
+  color: #333;
+}
+
+.elementDetails {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.elementVisibility {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* Painel do Editor (Direita) */
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6c757d;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.editorHeader {
+  margin-bottom: 2rem;
+}
+
+.editorTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.editorSubTitle {
+  color: #6c757d;
+}
+
+.propertyGroup {
+  background-color: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden; /* Para conter os elementos filhos */
+}
+
+.groupTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.groupContent {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* MUDANÇA AQUI */
+  gap: 1.5rem;
+}
+
+.formControl {
+  display: flex;
+  flex-direction: column;
+}
+
+.formControl.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.input, .select, .textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background-color: #fff;
+  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+}
+
+.input:focus, .select:focus, .textarea:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.colorInput {
+  height: 45px; /* Alinha com a altura dos outros inputs */
+  padding: 0.25rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.checkbox {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.rawViewer {
+  background-color: #212529;
+  color: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  max-height: 400px;
+  overflow: auto;
+  font-size: 0.8rem;
+}
+
+.generateButton {
+  width: 100%;
+  padding: 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.generateButton:hover {
+  background-color: #0056b3;
+}

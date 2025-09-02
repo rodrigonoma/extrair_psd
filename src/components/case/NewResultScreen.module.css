@@ -1,0 +1,298 @@
+/* Estrutura Principal */
+.screenContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #eee;
+  background-color: #f8f9fa;
+  flex-shrink: 0;
+}
+
+.mainContent {
+  display: flex;
+  flex-grow: 1;
+  gap: 2rem;
+  padding: 2rem;
+  overflow: hidden; /* Para controlar a rolagem dos painéis */
+}
+
+.previewPanel {
+  flex: 3; /* Ocupa 3/5 do espaço */
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto; /* Permite rolagem se o conteúdo for grande */
+  padding-right: 1rem;
+}
+
+.propertiesPanel {
+  flex: 2; /* Ocupa 2/5 do espaço */
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
+  overflow: hidden; /* Garante que o conteúdo respeite o border-radius */
+}
+
+/* Componentes do TopBar */
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #6c757d;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #6c757d;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.backButton:hover {
+  background-color: #f8f9fa;
+  border-color: #333;
+  color: #333;
+}
+
+.infoBadges {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.infoBadge {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.warningBadge, .errorBadge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.warningBadge {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.errorBadge {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Painel de Preview (Esquerda) */
+.previewCard {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.previewTitle {
+  margin-bottom: 1.5rem;
+  color: #333;
+  font-size: 1.3rem;
+}
+
+.imageWrapper {
+  border: 3px dashed #007bff;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #f8f9ff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  padding: 1rem;
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 600px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.primaryButton, .secondaryButton {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.primaryButton {
+  background-color: #28a745; /* Verde para "Gerar" */
+  color: #fff;
+}
+.primaryButton:hover:not(:disabled) {
+  background-color: #218838;
+}
+
+.secondaryButton {
+  background-color: #007bff; /* Azul para "Download" */
+  color: #fff;
+}
+.secondaryButton:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.primaryButton:disabled, .secondaryButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.infoBox {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  border: 1px solid #bbdefb;
+  color: #1976d2;
+}
+
+.infoBox strong {
+  font-size: 1rem;
+}
+
+.infoBox ul {
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+}
+
+/* Painel de Propriedades (Direita) */
+.tabsHeader {
+  display: flex;
+  flex-wrap: wrap; /* Permite que as abas quebrem a linha */
+  border-bottom: 1px solid #dee2e6;
+  padding: 0 1rem;
+  flex-shrink: 0;
+}
+
+.tabButton {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background-color: transparent;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.tabButton.active {
+  border-bottom: 3px solid #007bff;
+  background-color: #f8f9fa;
+  color: #007bff;
+}
+
+.tabCount {
+  background-color: #6c757d;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.tabButton.active .tabCount {
+  background-color: #007bff;
+}
+
+.tabContent {
+  padding: 2rem;
+  overflow-y: auto; /* Permite rolagem do conteúdo da aba */
+  flex-grow: 1;
+}
+
+.tabTitle {
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.emptyState {
+  text-align: center;
+  color: #666;
+  padding: 3rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.emptyStateIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.emptyState h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Mensagens de Erro/Aviso na parte inferior */
+.systemMessages {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.systemMessages h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.message {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.errorMessage {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-color: #f5c6cb;
+}
+
+.warningMessage {
+  background-color: #fff3cd;
+  color: #856404;
+  border-color: #ffeaa7;
+}

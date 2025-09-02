@@ -1,28 +1,54 @@
-.preview {
+.uploadZone {
   display: flex;
-  flex: 1 0 256px;
-  border-radius: 0.5rem;
-  width: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 1rem;
+  padding: 3rem;
+  border-radius: 12px;
+  width: 100%;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='8' ry='8' stroke='rgba(22, 22, 23, 0.3)' stroke-width='1' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
-  border-radius: 8px;
+  background-color: #f8f9ff;
+  border: 2px dashed #007bff;
+  transition: all 0.2s ease-in-out;
+  position: relative;
 }
 
-.preview>img {
-  grid-area: stack;
-  place-self: center;
-  height: 416px;
+.uploadZone:hover {
+  background-color: #e3f2fd;
+  border-color: #0056b3;
 }
 
-.preview>button.primary {
-  place-self: center;
+.uploadZone.dragging {
+  background-color: #e3f2fd;
+  border-color: #0056b3;
+  transform: scale(1.02);
 }
 
-.hidden {
+.uploadIcon {
+  width: 50px;
+  height: 50px;
+  color: #007bff;
+}
+
+.mainText {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.separator {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.uploadButton {
+  /* Estilo de botão já definido globalmente, mas podemos adicionar especificidades */
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+.hiddenInput {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -35,15 +61,9 @@
 }
 
 .filetypeNotice {
-  margin-block: 4px;
-  font-family: 'IBM Plex Sans';
+  margin-top: 1rem;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 400;
   font-size: 0.875rem;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-  color: var(--imgly-black-light-color);
-}
-
-.preview.dragging, .preview:hover {
-  background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='8' ry='8' stroke='%23471aff' stroke-width='1' stroke-dasharray='8%2c 8' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+  color: #6c757d;
 }

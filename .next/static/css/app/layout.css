@@ -1,3 +1,49 @@
+/*!*******************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[3]!./src/components/ui/Header.module.css ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************************/
+
+.Header_header__fNyWn {
+  background-color: var(--background-color);
+  border-bottom: 1px solid var(--divider-color);
+  padding: 1rem 2rem;
+  width: 100%;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.Header_container__qERvP {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.Header_title__v5GNb {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-dark-high-emphasis);
+  font-family: var(--font-family-gt);
+}
+
+/*!**************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[5].use[3]!./src/components/Layout/AppLayout.module.css ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************************/
+
+.AppLayout_layout__MwHg3 {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.AppLayout_mainContent__VDc_9 {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1600px; 
+  margin: 0 auto;
+  /* Classes movidas de page.tsx para preservar a funcionalidade de estilo */
+}
+
 /*!*******************************************************************************************************************************************************************************************************************************************************************!*\
   !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[2]!./node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[13].oneOf[10].use[3]!./src/styles/button.css ***!
   \*******************************************************************************************************************************************************************************************************************************************************************/

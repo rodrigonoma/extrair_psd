@@ -1,0 +1,62 @@
+/* Modal.module.css */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(10, 10, 10, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.overlay.open {
+  opacity: 1;
+}
+
+.content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  max-width: 1800px;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.95);
+  transition: transform 0.3s ease-in-out;
+}
+
+.overlay.open .content {
+  transform: scale(1);
+}
+
+.closeButton {
+  position: absolute;
+  top: 1rem;
+  right: 1.5rem;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.closeButton:hover {
+  color: #000;
+}
+
+.modalBody {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding-top: 2rem; /* Space for close button */
+}
