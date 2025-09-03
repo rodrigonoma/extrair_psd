@@ -1,5 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Add CORS headers to allow cross-origin font loading
+  async headers() {
+    return [
+      {
+        source: '/fonts/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, HEAD, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type',
+          },
+        ],
+      },
+    ];
+  },
   webpack(config, { webpack }) {
     config.module.rules.push({
       test: /\.svg$/,

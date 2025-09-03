@@ -63,11 +63,11 @@ Responda APENAS com um JSON válido no formato:
         'Authorization': `Bearer ${openaiApiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
-            content: 'Você é um copywriter especialista em reescrita criativa que mantém o sentido original dos textos.'
+            content: 'Você é um copywriter especialista em reescrita criativa que mantém o sentido original dos textos. SEMPRE responda em formato JSON válido com os campos "text" e "reasoning".'
           },
           {
             role: 'user',
@@ -75,7 +75,8 @@ Responda APENAS com um JSON válido no formato:
           }
         ],
         temperature: 0.8,
-        max_tokens: 500
+        max_tokens: 500,
+        response_format: { type: "json_object" }
       })
     });
 
@@ -93,13 +94,52 @@ Responda APENAS com um JSON válido no formato:
     // Parse the JSON response from ChatGPT
     let aiSuggestions;
     try {
+      console.log('🔍 Attempting to parse AI response...');
+      console.log('Raw response content:', JSON.stringify(responseContent));
+      
       // Extract JSON from the response (in case ChatGPT adds extra text)
       const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
       const jsonString = jsonMatch ? jsonMatch[0] : responseContent;
+      
+      console.log('Extracted JSON string:', JSON.stringify(jsonString));
+      
       aiSuggestions = JSON.parse(jsonString);
+      
+      console.log('✅ Successfully parsed AI response:', aiSuggestions);
+      
+      // Validate required fields
+      if (!aiSuggestions.text) {
+        console.warn('⚠️ Missing "text" field in response, using original');
+        aiSuggestions.text = originalText;
+      }
+      if (!aiSuggestions.reasoning) {
+        console.warn('⚠️ Missing "reasoning" field in response');
+        aiSuggestions.reasoning = 'Texto gerado automaticamente';
+      }
+      
     } catch (parseError) {
-      console.error('Failed to parse AI response:', responseContent);
-      throw new Error('Invalid JSON response from AI');
+      console.error('❌ Failed to parse AI response:', parseError);
+      console.error('Raw response content:', responseContent);
+      
+      // Fallback: try to extract text manually or use original
+      try {
+        // Try to extract text field manually
+        const textMatch = responseContent.match(/"text":\s*"([^"]+)"/);
+        const extractedText = textMatch ? textMatch[1] : originalText;
+        
+        console.log('🔄 Using fallback text extraction:', extractedText);
+        
+        aiSuggestions = {
+          text: extractedText,
+          reasoning: 'Texto extraído com método de fallback devido a erro de parsing'
+        };
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed, using original text');
+        aiSuggestions = {
+          text: originalText,
+          reasoning: 'Texto original mantido devido a erro na geração de IA'
+        };
+      }
     }
 
     return NextResponse.json({

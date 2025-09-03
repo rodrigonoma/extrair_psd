@@ -58,6 +58,13 @@ function NewResultScreen() {
   const [isDetectingProfile, setIsDetectingProfile] = useState(false);
   const [profileDetectedAutomatically, setProfileDetectedAutomatically] = useState(false);
   const [generationStyle, setGenerationStyle] = useState<'conservador' | 'moderado' | 'radical'>('moderado');
+
+  // Non-async wrapper for updateTextElement to use in React components
+  const updateTextElementSync = (id: number, updates: Partial<any>) => {
+    updateTextElement(id, updates).catch(error => {
+      console.error('Error in text element update:', error);
+    });
+  };
   if (!result) return null;
 
   const { messages } = result;
@@ -178,15 +185,20 @@ function NewResultScreen() {
         })
       });
       
+      console.log('API Response status:', response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error('Falha na chamada da API de geração de texto');
+        const errorText = await response.text();
+        console.error('API Error response:', errorText);
+        throw new Error(`Falha na chamada da API de geração de texto: ${response.status} - ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('API Response data:', data);
       
       if (data.success) {
         // Atualizar o texto no elemento
-        updateTextElement(element.id, { text: data.generatedText });
+        await updateTextElement(element.id, { text: data.generatedText });
         
         // Atualizar também no estado local do modal
         setTextElements(prev => prev.map(el => 
@@ -1144,7 +1156,7 @@ function NewResultScreen() {
                   {isAiRepositioning ? '🔄' : '🤖'}
                 </span>
                 <span>
-                  {isAiRepositioning ? 'Analisando...' : 'IA Textos'}
+                  {isAiRepositioning ? 'Analisando...' : 'IA'}
                 </span>
               </button>
               
@@ -1510,7 +1522,7 @@ function NewResultScreen() {
                       <AdvancedTextEditor
                         key={element.id}
                         element={element}
-                        onUpdate={updateTextElement}
+                        onUpdate={updateTextElementSync}
                       />
                     ))}
                   </div>

@@ -218,3 +218,8 @@ next-env.d.ts
 # Uncomment if you have CE.SDK temp/cache files
 # .cesdk-cache/
 # cesdk-temp/
+
+# secrets
+.env
+.env.local
+*.env

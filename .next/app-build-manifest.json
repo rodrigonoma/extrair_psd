@@ -1,5 +1,10 @@
 {
   "pages": {
+    "/api/fonts/[...path]/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/fonts/[...path]/route.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -11,30 +16,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/api/ai-color-palettes/route": [
+    "/api/fonts/scan/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/ai-color-palettes/route.js"
-    ],
-    "/api/ai-generate-image/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/ai-generate-image/route.js"
-    ],
-    "/api/ai-generate-text/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/ai-generate-text/route.js"
+      "static/chunks/app/api/fonts/scan/route.js"
     ],
     "/api/ai-detect-profile/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/ai-detect-profile/route.js"
     ],
-    "/_not-found/page": [
+    "/api/ai-color-palettes/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/api/ai-color-palettes/route.js"
+    ],
+    "/api/ai-generate-text/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/ai-generate-text/route.js"
+    ],
+    "/api/ai-generate-image/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/ai-generate-image/route.js"
     ]
   }
 }
