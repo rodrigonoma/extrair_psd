@@ -11,25 +11,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/api/fonts/scan/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/fonts/scan/route.js"
-    ],
-    "/api/ai-reposition/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/ai-reposition/route.js"
-    ],
-    "/api/ai-generate-text/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/ai-generate-text/route.js"
-    ],
     "/api/ai-color-palettes/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/ai-color-palettes/route.js"
+    ],
+    "/api/ai-generate-image/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/ai-generate-image/route.js"
+    ],
+    "/api/fonts/scan/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/fonts/scan/route.js"
     ]
   }
 }

@@ -396,7 +396,7 @@ const FileProcessingContext = createContext<FileProcessingContextValue>({
 
 const STATUS_MESSAGES = {
   idle: '',
-  init: 'Initializing...',
+  init: 'Initializing...', 
   fetching: 'Downloading: Assets',
   processing: 'Processing: Transforming PSD to Scene',
   done: '',
@@ -1429,7 +1429,7 @@ const FileProcessingContextProvider = ({
                 for (const missingFont of missingFonts) {
                   if (missingFont.includes(currentFont) || currentFont.includes(missingFont) || 
                       missingFont.toLowerCase().replace(/\d+pt|bold|thin|light|medium/g, '').trim() === 
-                      currentFont.toLowerCase().replace(/\d+pt|bold|thin|light|medium/g, '').trim()) {
+                      currentFont.toLowerCase().replace(/\d+pt|thin|light|medium/g, '').trim()) {
                     needsReplacement = true;
                     matchedMissingFont = missingFont;
                     replacement = fontReplacements[missingFont] || currentFont;
@@ -1748,32 +1748,53 @@ const FileProcessingContextProvider = ({
             const blockType = engine.block.getType(blockId);
             console.log('Processing block:', blockId, 'type:', blockType);
             
-            // Check if this block has an image (either by type or by having image fill)
+            // Check if this block has an image based ONLY on imageFileURI presence
             let hasImage = false;
             let imageUrl;
             
-            // First check if it's directly an image type
-            if (blockType && (
-              blockType.includes('image') || 
+            // Use the same comprehensive approach as extractImageUrl
+            // Primary check: Does it have an imageFileURI? If yes, it's an image
+            try {
+              imageUrl = engine.block.getString(blockId, 'fill/image/imageFileURI');
+              if (imageUrl && imageUrl.trim() !== '') {
+                hasImage = true;
+                console.log('✅ REAL IMAGE found (has imageFileURI - method 1):', blockId, blockType, imageUrl.substring(0, 50) + '...');
+              }
+            } catch (e) {
+              console.log('Method 1 (direct imageFileURI) failed for', blockId, ':', e.message);
+            }
+            
+            // Method 2: Try to get fill object and then extract URL (if method 1 failed)
+            if (!hasImage) {
+              try {
+                if (typeof engine.block.getFill === 'function') {
+                  const fillId = engine.block.getFill(blockId);
+                  if (fillId) {
+                    imageUrl = engine.block.getString(fillId, 'fill/image/imageFileURI');
+                    if (imageUrl && imageUrl.trim() !== '') {
+                      hasImage = true;
+                      console.log('✅ REAL IMAGE found (has imageFileURI - method 2):', blockId, blockType, imageUrl.substring(0, 50) + '...');
+                    }
+                  }
+                }
+              } catch (e) {
+                console.log('Method 2 (fill object imageFileURI) failed for', blockId, ':', e.message);
+              }
+            }
+            
+            if (!hasImage) {
+              console.log('🔍 NO imageFileURI found by any method, likely a shape:', blockId, blockType);
+            }
+            
+            // Secondary check: Only for specific image types (not graphic)
+            if (!hasImage && blockType && (
               blockType.includes('//ly.img.ubq/image') ||
               blockType === '//ly.img.ubq/graphic/image' ||
-              blockType.includes('graphic') ||
               blockType.includes('bitmap') ||
               blockType.includes('raster')
             )) {
               hasImage = true;
-              console.log('Found image block by type:', blockId, blockType);
-            }
-            
-            // Also check if any block has image fill properties
-            try {
-              imageUrl = engine.block.getString(blockId, 'fill/image/imageFileURI');
-              if (imageUrl) {
-                hasImage = true;
-                console.log('Found block with image fill:', blockId, blockType, imageUrl);
-              }
-            } catch (e) {
-              // No image fill
+              console.log('✅ IMAGE by specific type:', blockId, blockType);
             }
             
             if (hasImage) {
@@ -1814,8 +1835,8 @@ const FileProcessingContextProvider = ({
               blockType.includes('line') ||
               blockType.includes('star') ||
               blockType.includes('vector') ||
-              // Many shapes in CE.SDK are classified as 'graphic' 
-              (blockType === '//ly.img.ubq/graphic' && hasShapeProperties(engine, blockId))
+              // KEY CHANGE: ALL graphics without imageFileURI are shapes
+              blockType === '//ly.img.ubq/graphic'
             )) {
               console.log('Found shape block:', blockId, 'type:', blockType);
               
@@ -2163,10 +2184,9 @@ const FileProcessingContextProvider = ({
         console.log('Setting font size to:', updates.fontSize);
         engine.block.setFloat(id, 'text/fontSize', updates.fontSize);
       }
-      if (updates.fontFamily !== undefined && updates.fontFamily !== element.fontFamily) {
+      if (updates.fontFamily !== undefined) {
         console.log('🔤 FONT UPDATE DETECTED!');
         console.log('New font identifier:', updates.fontFamily);
-        console.log('Current font identifier:', element.fontFamily);
         
         try {
           const fontFileUri = `/fonts/${updates.fontFile}`;
@@ -2240,7 +2260,7 @@ const FileProcessingContextProvider = ({
           colorObj = { r, g, b, a: 1 };
         } else {
           // Parse rgba string
-          const colorMatch = updates.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([01]?\.?\d*))?\)/);
+          const colorMatch = updates.color.match(/rgba?(\(\d+,\s*\d+,\s*\d+(?:,\s*[01]?\.?\d*)?\))/);
           if (colorMatch) {
             const [, r, g, b, a = '1'] = colorMatch;
             colorObj = {
@@ -2313,7 +2333,7 @@ const FileProcessingContextProvider = ({
         try {
           if (stroke.enabled !== undefined) engine.block.setBool(id, 'stroke/enabled', stroke.enabled);
           if (stroke.color !== undefined) {
-            const colorMatch = stroke.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            const colorMatch = stroke.color.match(/rgba?(\(\d+,\s*\d+,\s*\d+(?:,\s*[\d.]+)?\))/);
             if (colorMatch) {
               const [, r, g, b, a = '1'] = colorMatch;
               engine.block.setColor(id, 'stroke/color', {
@@ -2337,7 +2357,7 @@ const FileProcessingContextProvider = ({
         try {
           if (dropShadow.enabled !== undefined) engine.block.setBool(id, 'dropShadow/enabled', dropShadow.enabled);
           if (dropShadow.color !== undefined) {
-            const colorMatch = dropShadow.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            const colorMatch = dropShadow.color.match(/rgba?(\(\d+,\s*\d+,\s*\d+(?:,\s*[\d.]+)?\))/);
             if (colorMatch) {
               const [, r, g, b, a = '1'] = colorMatch;
               engine.block.setColor(id, 'dropShadow/color', {
@@ -2364,7 +2384,7 @@ const FileProcessingContextProvider = ({
         try {
           if (backgroundColor.enabled !== undefined) engine.block.setBool(id, 'backgroundColor/enabled', backgroundColor.enabled);
           if (backgroundColor.color !== undefined) {
-            const colorMatch = backgroundColor.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            const colorMatch = backgroundColor.color.match(/rgba?(\(\d+,\s*\d+,\s*\d+(?:,\s*[\d.]+)?\))/);
             if (colorMatch) {
               const [, r, g, b, a = '1'] = colorMatch;
               engine.block.setColor(id, 'backgroundColor/color', {
@@ -2413,222 +2433,47 @@ const FileProcessingContextProvider = ({
   }, [engine, result]);
 
   const updateImageElement = useCallback((id: number, updates: Partial<ImageElement>) => {
-    console.log('=== updateImageElement CALLED ===');
-    console.log('Block ID:', id);
-    console.log('Updates received:', updates);
-    console.log('Engine exists:', !!engine);
-    console.log('Result exists:', !!result);
-    
-    if (!engine || !result) {
-      console.log('❌ Aborting: No engine or result');
-      return;
-    }
-    
-    console.log('✓ Proceeding with update...');
+    if (!engine || !result) return;
+
+    console.log(`🔄 Updating image element ${id}:`, updates);
 
     try {
-      // Since we're using real block IDs now, we can update directly
-      if (updates.x !== undefined && typeof engine.block.setPositionX === 'function') {
-        try {
-          engine.block.setPositionX(id, updates.x);
-        } catch (e) {
-          console.warn('Failed to set position X:', e);
-        }
-      }
-      if (updates.y !== undefined && typeof engine.block.setPositionY === 'function') {
-        try {
-          engine.block.setPositionY(id, updates.y);
-        } catch (e) {
-          console.warn('Failed to set position Y:', e);
-        }
-      }
-      if (updates.visible !== undefined) {
-        try {
-          // Try setBool first, then fallback to setVisible if it exists
-          if (typeof engine.block.setBool === 'function') {
-            engine.block.setBool(id, 'visible', updates.visible);
-          } else if (typeof engine.block.setVisible === 'function') {
-            engine.block.setVisible(id, updates.visible);
-          }
-        } catch (e) {
-          console.warn('Failed to set visibility:', e);
-        }
-      }
-      
-      // Update opacity
-      if (updates.opacity !== undefined && typeof engine.block.setOpacity === 'function') {
-        try {
-          engine.block.setOpacity(id, updates.opacity);
-        } catch (e) {
-          console.warn('Failed to set opacity:', e);
-        }
-      }
-      
-      // Update rotation
-      if (updates.rotation !== undefined && typeof engine.block.setRotation === 'function') {
-        try {
-          engine.block.setRotation(id, updates.rotation);
-        } catch (e) {
-          console.warn('Failed to set rotation:', e);
-        }
-      }
-      
-      // Update clipped
-      if (updates.clipped !== undefined) {
-        try {
-          engine.block.setBool(id, 'clipped', updates.clipped);
-        } catch (e) {
-          console.warn('Failed to set clipped:', e);
-        }
-      }
-      
-      // Update crop properties
-      if (updates.crop) {
-        const { crop } = updates;
-        try {
-          if (crop.rotation !== undefined) engine.block.setFloat(id, 'crop/rotation', crop.rotation);
-          if (crop.scaleRatio !== undefined) engine.block.setFloat(id, 'crop/scaleRatio', crop.scaleRatio);
-          if (crop.scaleX !== undefined) engine.block.setFloat(id, 'crop/scaleX', crop.scaleX);
-          if (crop.scaleY !== undefined) engine.block.setFloat(id, 'crop/scaleY', crop.scaleY);
-          if (crop.translationX !== undefined) engine.block.setFloat(id, 'crop/translationX', crop.translationX);
-          if (crop.translationY !== undefined) engine.block.setFloat(id, 'crop/translationY', crop.translationY);
-        } catch (e) {
-          console.warn('Failed to set crop properties:', e);
-        }
-      }
-      
-      // Update drop shadow properties
-      if (updates.dropShadow) {
-        const { dropShadow } = updates;
-        try {
-          if (dropShadow.enabled !== undefined) engine.block.setBool(id, 'dropShadow/enabled', dropShadow.enabled);
-          if (dropShadow.color !== undefined) {
-            // Parse color string to rgba components
-            const colorMatch = dropShadow.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-            if (colorMatch) {
-              const [, r, g, b, a = '1'] = colorMatch;
-              engine.block.setColor(id, 'dropShadow/color', {
-                r: parseInt(r) / 255,
-                g: parseInt(g) / 255,
-                b: parseInt(b) / 255,
-                a: parseFloat(a)
-              });
-            }
-          }
-          if (dropShadow.offsetX !== undefined) engine.block.setFloat(id, 'dropShadow/offset/x', dropShadow.offsetX);
-          if (dropShadow.offsetY !== undefined) engine.block.setFloat(id, 'dropShadow/offset/y', dropShadow.offsetY);
-          if (dropShadow.blurX !== undefined) engine.block.setFloat(id, 'dropShadow/blurRadius/x', dropShadow.blurX);
-          if (dropShadow.blurY !== undefined) engine.block.setFloat(id, 'dropShadow/blurRadius/y', dropShadow.blurY);
-        } catch (e) {
-          console.warn('Failed to set drop shadow properties:', e);
-        }
-      }
-      
-      // Update stroke properties
-      if (updates.stroke) {
-        const { stroke } = updates;
-        try {
-          if (stroke.enabled !== undefined) engine.block.setBool(id, 'stroke/enabled', stroke.enabled);
-          if (stroke.color !== undefined) {
-            // Parse color string to rgba components
-            const colorMatch = stroke.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-            if (colorMatch) {
-              const [, r, g, b, a = '1'] = colorMatch;
-              engine.block.setColor(id, 'stroke/color', {
-                r: parseInt(r) / 255,
-                g: parseInt(g) / 255,
-                b: parseInt(b) / 255,
-                a: parseFloat(a)
-              });
-            }
-          }
-          if (stroke.width !== undefined) engine.block.setFloat(id, 'stroke/width', stroke.width);
-        } catch (e) {
-          console.warn('Failed to set stroke properties:', e);
-        }
-      }
-      
-      // Update blur properties
-      if (updates.blur) {
-        const { blur } = updates;
-        try {
-          if (blur.enabled !== undefined) engine.block.setBool(id, 'blur/enabled', blur.enabled);
-        } catch (e) {
-          console.warn('Failed to set blur properties:', e);
-        }
-      }
-      
-      // Update fill properties (for image replacement and color fills)
       if (updates.fill) {
-        const { fill } = updates;
-        try {
-          if (fill.enabled !== undefined) engine.block.setBool(id, 'fill/enabled', fill.enabled);
-          
-          if (fill.type === '//ly.img.ubq/fill/image') {
-            if (fill.imageFileURI !== undefined) {
-              console.log('Setting new image URI for block', id, ':', fill.imageFileURI.substring(0, 50) + '...');
-              
-              // CORRECT METHOD: Create a new image fill and set it on the block (from working example)
-              try {
-                console.log('Creating new image fill...');
-                const imageFill = engine.block.createFill("image");
-                console.log('Setting imageFileURI on fill object...');
-                engine.block.setString(imageFill, "fill/image/imageFileURI", fill.imageFileURI);
-                console.log('Setting fill on block...');
-                engine.block.setFill(id, imageFill);
-                console.log('✓ Successfully replaced image using createFill method!');
-              } catch (e) {
-                console.warn('createFill method failed:', e);
-                
-                // Fallback: Try the old direct method
-                try {
-                  engine.block.setString(id, 'fill/image/imageFileURI', fill.imageFileURI);
-                  console.log('✓ Fallback: Successfully set fill/image/imageFileURI directly');
-                } catch (e2) {
-                  console.warn('Both methods failed:', e2);
-                  // Try asset replacement as last resort
-                  handleImageAssetReplacement(engine, id, fill.imageFileURI);
-                }
-              }
-            }
-            if (fill.externalReference !== undefined) engine.block.setString(id, 'fill/image/externalReference', fill.externalReference);
-            if (fill.previewFileURI !== undefined) engine.block.setString(id, 'fill/image/previewFileURI', fill.previewFileURI);
-            if (fill.sourceSet !== undefined) engine.block.setString(id, 'fill/image/sourceSet', fill.sourceSet);
-          } else if (fill.type === '//ly.img.ubq/fill/color' && fill.color) {
-            // Parse color string to rgba components for solid color fills
-            const colorMatch = fill.color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-            if (colorMatch) {
-              const [, r, g, b, a = '1'] = colorMatch;
-              engine.block.setColor(id, 'fill/solid/color', {
-                r: parseInt(r) / 255,
-                g: parseInt(g) / 255,
-                b: parseInt(b) / 255,
-                a: parseFloat(a)
-              });
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to set fill properties:', e);
+        if (updates.fill.type === '//ly.img.ubq/fill/color' && updates.fill.color) {
+          console.log(`🎨 Setting color fill for element ${id}:`, updates.fill.color);
+          const colorFill = engine.block.createFill('color');
+          const hex = updates.fill.color;
+          const r = parseInt(hex.slice(1, 3), 16) / 255;
+          const g = parseInt(hex.slice(3, 5), 16) / 255;
+          const b = parseInt(hex.slice(5, 7), 16) / 255;
+          engine.block.setColor(colorFill, 'fill/color/value', { r, g, b, a: 1 });
+          engine.block.setFill(id, colorFill);
+        } else if (updates.fill.type === '//ly.img.ubq/fill/image' && updates.fill.imageFileURI) {
+          console.log(`🖼️ Setting image fill for element ${id}:`, updates.fill.imageFileURI.substring(0, 50) + '...');
+          const imageFill = engine.block.createFill('image');
+          engine.block.setString(imageFill, 'fill/image/imageFileURI', updates.fill.imageFileURI);
+          engine.block.setFill(id, imageFill);
+          console.log(`✅ Image fill applied successfully to element ${id}`);
         }
-      }
-      
-      // Update imageUrl for immediate preview update
-      if (updates.imageUrl !== undefined) {
-        console.log('Updating imageUrl for immediate preview:', updates.imageUrl.substring(0, 50) + '...');
+      } else {
+        Object.entries(updates).forEach(([key, value]) => {
+          if (key === 'visible') {
+            engine.block.setVisible(id, value as boolean);
+          }
+        });
       }
 
-      // Update the local state
       setResult(prevResult => {
         if (!prevResult) return prevResult;
         return {
           ...prevResult,
-          imageElements: prevResult.imageElements.map(el => 
+          imageElements: prevResult.imageElements.map(el =>
             el.id === id ? { ...el, ...updates } : el
           )
         };
       });
     } catch (error) {
-      console.error('Error updating image element:', error);
+      console.error(`Failed to update image element ${id}:`, error);
     }
   }, [engine, result]);
 
@@ -2639,17 +2484,29 @@ const FileProcessingContextProvider = ({
 
     try {
       // Since we're using real block IDs now, we can update directly
-      if (updates.fillColor !== undefined && engine.block.setColor) {
+      if (updates.fillColor !== undefined && typeof updates.fillColor === 'string') {
         try {
-          const colorMatch = updates.fillColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([01]?\.?\d*))?\)/);
+          let r, g, b, a = 1.0;
+          // Improved regex to handle hex codes as well
+          let colorMatch = updates.fillColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([01]?\.?\d*))?\)/);
           if (colorMatch) {
-            const [, r, g, b, a = '1'] = colorMatch;
-            engine.block.setColor(id, 'fill/solid/color', {
-              r: parseInt(r) / 255,
-              g: parseInt(g) / 255,
-              b: parseInt(b) / 255,
-              a: parseFloat(a)
-            });
+              r = parseInt(colorMatch[1]);
+              g = parseInt(colorMatch[2]);
+              b = parseInt(colorMatch[3]);
+              a = parseFloat(colorMatch[4] || '1');
+          } else {
+              colorMatch = updates.fillColor.match(/#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/);
+              if (colorMatch) {
+                r = parseInt(colorMatch[1], 16);
+                g = parseInt(colorMatch[2], 16);
+                b = parseInt(colorMatch[3], 16);
+              }
+          }
+
+          if (r !== undefined) {
+            const colorFill = engine.block.createFill('color');
+            engine.block.setColor(colorFill, 'fill/color/value', { r: r / 255, g: g / 255, b: b / 255, a });
+            engine.block.setFill(id, colorFill);
           }
         } catch (e) {
           console.warn('Failed to set fill color:', e);
@@ -2829,12 +2686,6 @@ const FileProcessingContextProvider = ({
       // Fill properties
       'fillEnabled': 'fill/enabled',
       
-      // Nested text properties
-      'textProperties.horizontalAlignment': 'text/horizontalAlignment',
-      'textProperties.verticalAlignment': 'text/verticalAlignment',
-      'textProperties.letterSpacing': 'text/letterSpacing',
-      'textProperties.lineHeight': 'text/lineHeight',
-      
       // Image properties
       'imageUrl': 'fill/image/imageFileURI',
       
@@ -3007,8 +2858,6 @@ const FileProcessingContextProvider = ({
           } catch (e) {
             console.error('❌ UNIVERSAL: Font change failed:', e);
           }
-        } else {
-          engine.block.setString(blockId, propertyPath, value);
         }
       } else if (propertyPath.includes('color')) {
         // Handle color values
@@ -3022,7 +2871,7 @@ const FileProcessingContextProvider = ({
             colorObj = { r, g, b, a: 1 };
           } else if (value.startsWith('rgba')) {
             // Parse rgba string
-            const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+            const match = value.match(/rgba?(\(\d+,\s*\d+,\s*\d+(?:,\s*[01]?\.?\d*)?\))/);
             if (match) {
               colorObj = {
                 r: parseInt(match[1]) / 255,
@@ -3050,8 +2899,6 @@ const FileProcessingContextProvider = ({
                 console.warn('setTextColor failed, trying direct setColor:', textColorError);
                 engine.block.setColor(blockId, propertyPath, colorObj);
               }
-            } else {
-              engine.block.setColor(blockId, propertyPath, colorObj);
             }
           } else {
             engine.block.setColor(blockId, propertyPath, colorObj);
@@ -3069,136 +2916,62 @@ const FileProcessingContextProvider = ({
     }
   };
 
-  // Generate batch images with property modifications
-  const generateBatchImages = useCallback(async (items: Array<{[key: string]: any}>): Promise<string[]> => {
-    if (!engine || !result) {
-      throw new Error('Engine or result not available');
-    }
-
-    const generatedUrls: string[] = [];
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      console.log(`Generating image ${i + 1}/${items.length}`, item);
-
-      try {
-        // Apply all property changes for this item
-        Object.keys(item).forEach(elementId => {
-          const updates = item[elementId];
-          const id = parseInt(elementId);
-          
-          if (!isNaN(id) && updates) {
-            updateElement(id, updates);
-          }
-        });
-
-        // Small delay to ensure changes are applied
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Generate the image
-        const pageBlock = engine.block.findByType('page')[0];
-        if (pageBlock) {
-          const blob = await engine.block.export(pageBlock, 'image/png');
-          const imageUrl = URL.createObjectURL(blob);
-          generatedUrls.push(imageUrl);
-        }
-      } catch (error) {
-        console.error(`Error generating image ${i + 1}:`, error);
-        throw error;
-      }
-    }
-
-    return generatedUrls;
-  }, [engine, result, updateElement]);
-
   const regenerateImage = useCallback(async () => {
-    console.log('Regenerate image called, engine:', !!engine);
+    if (!engine) return;
     
-    if (!engine) {
-      console.error('No engine available for regeneration');
-      return;
-    }
-
-    console.log('Starting image regeneration...');
-    // Don't change the main status during regeneration to avoid UI conflicts
-    // setStatus('processing');
+    console.log('Regenerating image...');
     
-    try {
-      const pages = engine.scene.getPages();
-      console.log('Available pages:', pages);
-      
-      if (pages.length === 0) {
-        throw new Error('No pages found in scene');
-      }
-      
-      const pageId = pages[0];
-      console.log('Exporting page:', pageId);
-      
-      // Force a longer delay to ensure all changes are applied
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Force engine to update/refresh the scene
-      try {
-        engine.editor.setSettingBool('page/title/show', false);
-        engine.editor.setSettingBool('page/title/show', true);
-        console.log('✓ Forced engine refresh');
-      } catch (e) {
-        console.log('Engine refresh not available, continuing...');
-      }
-      
-      const imageBlob = await engine.block.export(pageId, {
-        mimeType: 'image/png',
-        targetHeight: 1000,
-        targetWidth: 1000
-      });
-      
-      console.log('Image exported successfully, blob size:', imageBlob.size);
-      
-      // Verify the changes are in the scene
-      if (result && result.textElements.length > 0) {
-        console.log('Verifying text changes in scene:');
-        result.textElements.forEach(textElement => {
-          try {
-            const content = engine.block.getString(textElement.id, 'text/text');
-            console.log(`Text in block ${textElement.id}:`, content);
-          } catch (e) {
-            console.log(`Could not read text from block ${textElement.id}`);
-          }
-        });
-      }
-
-      setResult(prevResult => {
-        if (!prevResult) return prevResult;
-        
-        // Revoke the old URL to prevent memory leaks
-        URL.revokeObjectURL(prevResult.imageUrl);
-        
-        const newImageUrl = URL.createObjectURL(imageBlob);
-        console.log('New image URL created:', newImageUrl);
-        
-        return {
-          ...prevResult,
-          imageUrl: newImageUrl
-        };
-      });
-      
-      console.log('Image regeneration completed successfully');
-    } catch (error) {
-      console.error('Error regenerating image:', error);
-      alert(`Erro ao gerar imagem: ${error.message}`);
-    } finally {
-      // setStatus('idle');
-    }
+    const scene = engine.scene.get();
+    const imageBlob = await engine.block.export(scene, 'image/png');
+    
+    setResult(prev => prev ? { ...prev, imageUrl: URL.createObjectURL(imageBlob) } : null);
+    console.log('Image regenerated');
   }, [engine]);
+
+  const generateBatchImages = useCallback(async (items: Array<{[key: string]: any}>) => {
+    if (!engine || !currentFile) return [];
+    
+    console.log('Generating batch images...');
+    
+    const originalScene = await engine.scene.saveToString();
+    const generatedImageUrls: string[] = [];
+    
+    for (const item of items) {
+      // Apply changes for this item
+      Object.entries(item).forEach(([elementName, properties]) => {
+        const blockId = engine.block.findByName(elementName)[0];
+        if (blockId) {
+          Object.entries(properties).forEach(([prop, value]) => {
+            try {
+              if (prop === 'text') {
+                engine.block.setString(blockId, 'text/text', value);
+              }
+              // Add other property handlers as needed
+            } catch (e) {
+              console.error(`Failed to set property ${prop} on ${elementName}`, e);
+            }
+          });
+        }
+      });
+      
+      // Export image
+      const scene = engine.scene.get();
+      const imageBlob = await engine.block.export(scene, 'image/png');
+      generatedImageUrls.push(URL.createObjectURL(imageBlob));
+      
+      // Revert to original scene for next iteration
+      await engine.scene.loadFromString(originalScene);
+    }
+    
+    console.log('Batch image generation complete');
+    return generatedImageUrls;
+  }, [engine, currentFile]);
 
   const updateFontDefinitions = useCallback((newFonts: any) => {
     console.log('Updating font definitions with:', newFonts);
-    
-    // Replace all font definitions with new ones from scan
     setFontDefinitions(newFonts);
     console.log('Updated font definitions (replaced):', newFonts);
     
-    // If engine is available, register new fonts in asset system
     if (engine && engine.asset) {
       console.log('🔧 Registering new fonts in CE.SDK...');
       
@@ -3207,10 +2980,8 @@ const FileProcessingContextProvider = ({
           const font = fontDef.fonts?.[0];
           if (!font) return;
           
-          // Register in local-hosted-fonts source
           const sourceId = 'local-hosted-fonts';
           
-          // Ensure source exists
           try {
             if (!engine.asset.findAllSources().includes(sourceId)) {
               engine.asset.addLocalSource(sourceId);
@@ -3219,7 +2990,6 @@ const FileProcessingContextProvider = ({
             console.log('Source already exists or error creating:', e.message);
           }
           
-          // Create asset definition
           const assetDefinition = {
             id: `typeface-${fontName.toLowerCase().replace(/\s+/g, '-')}`,
             label: { en: fontName },
@@ -3247,28 +3017,28 @@ const FileProcessingContextProvider = ({
     }
   }, [engine]);
 
+  const value = {
+    status,
+    processMessage,
+    isProcessing: PROCESSING_STATUS.includes(status),
+    processFile,
+    currentFile,
+    resetState,
+    inferenceTime,
+    result,
+    updateTextElement,
+    updateImageElement,
+    updateShapeElement,
+    updateElement,
+    regenerateImage,
+    generateBatchImages,
+    updateFontDefinitions,
+    fontDefinitions,
+    engine
+  };
+
   return (
-    <FileProcessingContext.Provider
-      value={{
-        status,
-        isProcessing: PROCESSING_STATUS.includes(status),
-        processMessage,
-        result,
-        currentFile,
-        processFile,
-        resetState,
-        inferenceTime,
-        updateTextElement,
-        updateImageElement,
-        updateShapeElement,
-        updateElement,
-        regenerateImage,
-        generateBatchImages,
-        updateFontDefinitions,
-        fontDefinitions,
-        engine
-      }}
-    >
+    <FileProcessingContext.Provider value={value}>
       {children}
     </FileProcessingContext.Provider>
   );

@@ -24,7 +24,8 @@ function NewResultScreen() {
     updateElement,
     regenerateImage,
     generateBatchImages,
-    isProcessing
+    isProcessing,
+    engine
   } = useFileProcessing();
 
   const { showToast } = useToast();
@@ -43,6 +44,16 @@ function NewResultScreen() {
   const [isGeneratingPalettes, setIsGeneratingPalettes] = useState(false);
   const [selectedPaletteIndex, setSelectedPaletteIndex] = useState<number | null>(null);
   const [isApplyingChanges, setIsApplyingChanges] = useState(false);
+  const [showElementPreview, setShowElementPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    willChange: Array<{element: any, type: 'shape' | 'image', reason: string}>,
+    willSkip: Array<{element: any, type: 'shape' | 'image', reason: string}>
+  }>({ willChange: [], willSkip: [] });
+  const [uploadedImages, setUploadedImages] = useState<{[elementId: number]: string}>({});
+  const [uploadingImages, setUploadingImages] = useState<Set<number>>(new Set());
+  const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
+  const [generatedAiImage, setGeneratedAiImage] = useState<string | null>(null);
+  const [aiPromptAddition, setAiPromptAddition] = useState('');
   if (!result) return null;
 
   const { messages } = result;
@@ -178,6 +189,269 @@ function NewResultScreen() {
     }
   };
 
+  // Função para lidar com upload de imagem
+  const handleImageUpload = async (elementId: number, file: File) => {
+    if (!file) return;
+
+    console.log(`📤 Uploading image for element ${elementId}:`, file.name);
+    
+    setUploadingImages(prev => new Set([...prev, elementId]));
+    
+    try {
+      // Criar URL temporária para a imagem
+      const imageUrl = URL.createObjectURL(file);
+      
+      // Aplicar a imagem imediatamente no elemento
+      console.log(`🖼️ Applying uploaded image to element ${elementId}`);
+      updateImageElement(elementId, {
+        fill: {
+          type: '//ly.img.ubq/fill/image',
+          imageFileURI: imageUrl,
+          enabled: true
+        }
+      });
+      
+      // Salvar referência da imagem uploaded
+      setUploadedImages(prev => ({
+        ...prev,
+        [elementId]: imageUrl
+      }));
+      
+      // Regenerar preview
+      await regenerateImage();
+      
+      showToast({
+        type: 'success',
+        title: `✅ Imagem aplicada ao elemento ${elementId} com sucesso!`
+      });
+      
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      showToast({
+        type: 'error',
+        title: '❌ Erro ao fazer upload da imagem'
+      });
+    } finally {
+      setUploadingImages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(elementId);
+        return newSet;
+      });
+    }
+  };
+
+  // Função para gerar imagem similar com fal.ai
+  const generateAiImage = async () => {
+    if (!result || selectedPaletteIndex === null || selectedPaletteIndex === undefined || !colorPalettes[selectedPaletteIndex]) {
+      showToast({
+        type: 'error',
+        title: '❌ Selecione uma paleta de cores primeiro'
+      });
+      return;
+    }
+
+    const selectedPalette = colorPalettes[selectedPaletteIndex];
+    
+    console.log('🎨 Gerando imagem com IA usando fal.ai...');
+    setIsGeneratingAiImage(true);
+    
+    try {
+      // Converter blob URL para base64 se necessário
+      let baseImageUrl = result.imageUrl;
+      
+      if (baseImageUrl.startsWith('blob:')) {
+        console.log('🔄 Convertendo blob para base64...');
+        try {
+          const response = await fetch(baseImageUrl);
+          const blob = await response.blob();
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          baseImageUrl = base64;
+          console.log('✅ Conversão para base64 concluída');
+        } catch (blobError) {
+          console.error('Erro ao converter blob:', blobError);
+          throw new Error('Erro ao processar a imagem base');
+        }
+      }
+      
+      console.log('🔄 Enviando requisição para API...');
+      console.log('Base image URL type:', typeof baseImageUrl, baseImageUrl?.substring(0, 50));
+      
+      const response = await fetch('/api/ai-generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          baseImageUrl: baseImageUrl,
+          colors: selectedPalette.colors,
+          paletteDescription: selectedPalette.description,
+          prompt: aiPromptAddition || 'Focus on precise color replacement while maintaining professional marketing quality.'
+        })
+      });
+
+      console.log('✅ Response recebido, status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API response error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`API error ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('📦 Data recebido:', data);
+      
+      if (data.success && data.imageUrl) {
+        setGeneratedAiImage(data.imageUrl);
+        
+        showToast({
+          type: 'success',
+          title: '✨ Imagem gerada com sucesso!',
+          message: 'Nova variação criada com IA usando as cores da paleta selecionada'
+        });
+        
+        console.log('✅ Imagem gerada com IA:', data.imageUrl);
+        console.log('💭 Reasoning:', data.reasoning);
+      } else {
+        throw new Error(data.error || 'Erro desconhecido na geração');
+      }
+      
+    } catch (error) {
+      console.error('Erro ao gerar imagem com IA:', error);
+      showToast({
+        type: 'error',
+        title: '❌ Erro na geração com IA',
+        message: error instanceof Error ? error.message : 'Erro desconhecido'
+      });
+    } finally {
+      setIsGeneratingAiImage(false);
+    }
+  };
+
+  // Função para analisar elementos e gerar preview
+  const generateElementPreview = () => {
+    if (!result) return;
+
+    const willChange: Array<{element: any, type: 'shape' | 'image', reason: string}> = [];
+    const willSkip: Array<{element: any, type: 'shape' | 'image', reason: string}> = [];
+
+    // Analisar shapes
+    if (result.shapeElements) {
+      result.shapeElements.forEach((element) => {
+        if (shouldApplySolidColor(element, 'shape')) {
+          const hasGradient = element.fill && (
+            element.fill.type?.includes('gradient') ||
+            element.name?.toLowerCase().includes('gradient') ||
+            element.name?.toLowerCase().includes('degradê')
+          );
+          
+          willChange.push({
+            element,
+            type: 'shape',
+            reason: hasGradient 
+              ? 'Elemento com gradiente - aplicará overlay semi-transparente'
+              : 'Elemento de forma simples - aplicará cor sólida'
+          });
+        } else {
+          const excludePatterns = ['logo', 'marca', 'brand', 'gradient', 'degradê', 'degrade', 'gradiente', 'photo', 'foto', 'imagem', 'image', 'texture', 'textura', 'shadow', 'sombra', 'drop-shadow', 'overlay', 'sobreposição', 'background-image', 'bg-img', 'icon', 'icone', 'ícone', 'illustration', 'ilustração', 'ilustracao'];
+          const detectedPattern = excludePatterns.find(pattern => 
+            element.name?.toLowerCase().includes(pattern)
+          );
+          
+          willSkip.push({
+            element,
+            type: 'shape',
+            reason: `Excluído por padrão detectado: "${detectedPattern}" - preserva qualidade original`
+          });
+        }
+      });
+    }
+
+    // Analisar images
+    if (result.imageElements) {
+      result.imageElements.forEach((element) => {
+        if (shouldApplySolidColor(element, 'image')) {
+          willChange.push({
+            element,
+            type: 'image',
+            reason: 'Elemento de background/forma - aplicará overlay semi-transparente (30%)'
+          });
+        } else {
+          const allowedImagePatterns = ['background', 'bg', 'fundo', 'color', 'cor', 'shape', 'forma', 'rectangle', 'retangulo', 'rect', 'circle', 'circulo', 'oval', 'banner', 'header', 'footer', 'button', 'botão', 'botao', 'card', 'cartão', 'cartao'];
+          const hasAllowedPattern = allowedImagePatterns.some(pattern => 
+            element.name?.toLowerCase().includes(pattern)
+          );
+          
+          willSkip.push({
+            element,
+            type: 'image',
+            reason: hasAllowedPattern 
+              ? 'Imagem complexa - preserva conteúdo original'
+              : 'Não identificado como elemento colorível - preserva conteúdo original'
+          });
+        }
+      });
+    }
+
+    setPreviewData({ willChange, willSkip });
+    setShowElementPreview(true);
+  };
+
+  // Função para detectar se um elemento deve receber cor sólida
+  const shouldApplySolidColor = (element: any, elementType: 'shape' | 'image') => {
+    const name = element.name?.toLowerCase() || '';
+    
+    console.log(`🔍 Analisando elemento: "${element.name}" (${elementType})`);
+    
+    // Lista de padrões que indicam elementos que NÃO devem receber cor sólida
+    const excludePatterns = [
+      'logo', 'marca', 'brand',
+      'photo', 'foto'
+    ];
+    
+    // Verificar se o nome do elemento contém padrões a serem excluídos
+    const hasExcludePattern = excludePatterns.some(pattern => name.includes(pattern));
+    
+    if (hasExcludePattern) {
+      console.log(`🚫 Elemento "${element.name}" excluído da aplicação de cor (padrão detectado: ${excludePatterns.find(p => name.includes(p))})`);
+      return false;
+    }
+    
+    // Para debug: aceitar todos os outros elementos temporariamente
+    console.log(`✅ Elemento "${element.name}" aprovado para aplicação de cor`);
+    return true;
+  };
+
+  // Função para aplicar cor preservando efeitos
+  const applyColorPreservingEffects = (element: any, newColor: string, elementType: 'shape' | 'image') => {
+    console.log(`🎨 Aplicando cor inteligente em ${elementType} ${element.id} (${element.name}): ${newColor}`);
+    
+    if (elementType === 'shape') {
+      // Para shapes, sempre aplicar cor sólida mas de forma mais cuidadosa
+      console.log(`🔷 Aplicando cor sólida em forma "${element.name}"`);
+      updateShapeElement(element.id, {
+        fillColor: newColor
+      });
+    } else if (elementType === 'image') {
+      // Para imagens, aplicar como fill de cor (método que funcionava antes)
+      console.log(`🖼️ Aplicando cor como fill em imagem "${element.name}"`);
+      updateImageElement(element.id, {
+        fill: {
+          type: '//ly.img.ubq/fill/color',
+          color: newColor,
+          enabled: true
+        }
+      });
+    }
+  };
+
   const applyAiChanges = async () => {
     console.log('Applying AI changes to PSD');
     console.log('Current result elements:', {
@@ -198,65 +472,17 @@ function NewResultScreen() {
         
         let changesApplied = 0;
         
-        // Aplicar cores em elementos de forma/shape
+        // Aplicar cores em elementos de forma/shape COM DETECÇÃO INTELIGENTE
         if (result.shapeElements && result.shapeElements.length > 0) {
-          console.log('🔷 Processando', result.shapeElements.length, 'elementos de forma...');
+          console.log('🔷 Processando', result.shapeElements.length, 'elementos de forma com detecção inteligente...');
           
           result.shapeElements.forEach((element, index) => {
-            const colorIndex = index % selectedPalette.colors.length;
-            const newColor = selectedPalette.colors[colorIndex];
-            
-            console.log(`🔷 Elemento ${element.id} (${element.name}):`, {
-              currentBgColor: element.backgroundColor?.color,
-              newColor: newColor,
-              elementStructure: Object.keys(element)
-            });
-            
-            // Tentar diferentes formas de aplicar a cor
-            try {
-              // Método 1: Usar fillColor (conforme FileProcessingContext)
-              updateShapeElement(element.id, {
-                fillColor: newColor
-              });
-              console.log(`✅ Cor aplicada em shape via fillColor ${element.id}: ${newColor}`);
+            if (shouldApplySolidColor(element, 'shape')) {
+              const colorIndex = index % selectedPalette.colors.length;
+              const newColor = selectedPalette.colors[colorIndex];
+              
+              applyColorPreservingEffects(element, newColor, 'shape');
               changesApplied++;
-              
-            } catch (error) {
-              console.error(`❌ Erro ao aplicar fillColor no shape ${element.id}:`, error);
-              
-              // Método 2: Tentar backgroundColor
-              try {
-                updateShapeElement(element.id, {
-                  backgroundColor: {
-                    enabled: true,
-                    color: newColor,
-                    cornerRadius: element.backgroundColor?.cornerRadius || 0,
-                    paddingTop: element.backgroundColor?.paddingTop || 0,
-                    paddingBottom: element.backgroundColor?.paddingBottom || 0,
-                    paddingLeft: element.backgroundColor?.paddingLeft || 0,
-                    paddingRight: element.backgroundColor?.paddingRight || 0
-                  }
-                });
-                console.log(`✅ Cor aplicada via backgroundColor em ${element.id}: ${newColor}`);
-                changesApplied++;
-              } catch (error2) {
-                console.error(`❌ Erro no método backgroundColor para ${element.id}:`, error2);
-                
-                // Método 3: Tentar updateElement genérico
-                try {
-                  updateElement(element.id, { 
-                    fillColor: newColor,
-                    fill: {
-                      type: '//ly.img.ubq/fill/color',
-                      color: newColor
-                    }
-                  });
-                  console.log(`✅ Cor aplicada via updateElement genérico em ${element.id}: ${newColor}`);
-                  changesApplied++;
-                } catch (error3) {
-                  console.error(`❌ Todos os métodos falharam para ${element.id}:`, error3);
-                }
-              }
             }
           });
         }
@@ -267,74 +493,18 @@ function NewResultScreen() {
           console.log('📝 Encontrados', result.textElements.length, 'elementos de texto (cores preservadas)');
         }
         
-        // Aplicar cores em elementos de imagem (tentar background ou overlay)
+        // Aplicar cores em elementos de imagem COM DETECÇÃO INTELIGENTE
         if (result.imageElements && result.imageElements.length > 0) {
-          console.log('🖼️ Processando', result.imageElements.length, 'elementos de imagem...');
+          console.log('🖼️ Processando', result.imageElements.length, 'elementos de imagem com detecção inteligente...');
           
           result.imageElements.forEach((element, index) => {
-            // Usar cores diferentes das shapes, mas não considerar textos
-            const colorIndex = (index + (result.shapeElements?.length || 0)) % selectedPalette.colors.length;
-            const newColor = selectedPalette.colors[colorIndex];
-            
-            console.log(`🖼️ Elemento imagem ${element.id} (${element.name}):`, {
-              currentFill: element.fill,
-              newColor: newColor,
-              elementStructure: Object.keys(element)
-            });
-            
-            // Tentar aplicar cor diretamente no engine CE.SDK
-            try {
-              // Método 1: Aplicar cor diretamente usando engine CE.SDK
-              const { updateTextElement, updateImageElement, updateShapeElement, updateElement, engine } = useFileProcessing();
+            if (shouldApplySolidColor(element, 'image')) {
+              // Usar cores diferentes das shapes, mas não considerar textos
+              const colorIndex = (index + (result.shapeElements?.length || 0)) % selectedPalette.colors.length;
+              const newColor = selectedPalette.colors[colorIndex];
               
-              if (engine && engine.block) {
-                // Converter cor hex para rgba
-                const hexToRgba = (hex: string) => {
-                  const r = parseInt(hex.slice(1, 3), 16) / 255;
-                  const g = parseInt(hex.slice(3, 5), 16) / 255;
-                  const b = parseInt(hex.slice(5, 7), 16) / 255;
-                  return { r, g, b, a: 1 };
-                };
-                
-                const colorRgba = hexToRgba(newColor);
-                console.log(`🔧 Aplicando cor ${newColor} via engine CE.SDK no bloco ${element.id}`);
-                
-                try {
-                  // Tentar criar um fill de cor sólida
-                  const colorFill = engine.block.createFill("color");
-                  engine.block.setColor(colorFill, "fill/solid/color", colorRgba);
-                  engine.block.setFill(element.id, colorFill);
-                  console.log(`✅ Fill de cor sólida aplicado via engine CE.SDK ${element.id}: ${newColor}`);
-                  changesApplied++;
-                } catch (engineError) {
-                  console.error(`❌ Erro no engine CE.SDK para ${element.id}:`, engineError);
-                  
-                  // Fallback: Tentar setColor diretamente
-                  try {
-                    engine.block.setColor(element.id, "fill/solid/color", colorRgba);
-                    console.log(`✅ Cor aplicada diretamente via setColor ${element.id}: ${newColor}`);
-                    changesApplied++;
-                  } catch (setColorError) {
-                    console.error(`❌ Erro no setColor direto para ${element.id}:`, setColorError);
-                    
-                    // Fallback: Método original
-                    updateImageElement(element.id, {
-                      fill: {
-                        type: '//ly.img.ubq/fill/color',
-                        color: newColor,
-                        enabled: true
-                      }
-                    });
-                    console.log(`✅ Fallback: Fill aplicado ${element.id}: ${newColor}`);
-                    changesApplied++;
-                  }
-                }
-              } else {
-                throw new Error('Engine não disponível');
-              }
-              
-            } catch (error) {
-              console.error(`❌ Erro geral ao aplicar cor na imagem ${element.id}:`, error);
+              applyColorPreservingEffects(element, newColor, 'image');
+              changesApplied++;
             }
           });
         }
@@ -347,6 +517,28 @@ function NewResultScreen() {
             title: '⚠️ Nenhuma mudança de cor foi aplicada. Verifique se há elementos gráficos no PSD.' 
           });
         }
+      }
+      
+      // Aplicar imagens que foram carregadas via upload
+      console.log('🖼️ Verificando imagens carregadas via upload...');
+      if (Object.keys(uploadedImages).length > 0) {
+        console.log('📤 Aplicando', Object.keys(uploadedImages).length, 'imagens carregadas');
+        
+        Object.entries(uploadedImages).forEach(([elementIdStr, imageUrl]) => {
+          const elementId = parseInt(elementIdStr);
+          console.log(`📷 Aplicando imagem carregada no elemento ${elementId}`);
+          
+          updateImageElement(elementId, {
+            fill: {
+              type: '//ly.img.ubq/fill/image',
+              imageFileURI: imageUrl,
+              enabled: true
+            }
+          });
+        });
+        
+        // Pequena pausa após aplicar as imagens carregadas
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       // Aguardar um pouco para as mudanças serem processadas
@@ -1018,6 +1210,106 @@ function NewResultScreen() {
                   }}
                 />
               </div>
+
+              {/* Seção de Imagem Gerada com IA */}
+              {generatedAiImage && (
+                <div style={{
+                  marginTop: '2rem',
+                  padding: '24px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: '16px',
+                  border: '2px solid #e2e8f0'
+                }}>
+                  <h3 style={{
+                    margin: '0 0 16px 0',
+                    color: '#1a202c',
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    ✨ Variação Gerada com IA
+                  </h3>
+                  
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
+                  }}>
+                    <img
+                      src={generatedAiImage}
+                      alt="Variação Gerada com IA"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '600px',
+                        height: 'auto',
+                        borderRadius: '8px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)'
+                      }}
+                    />
+                  </div>
+                  
+                  <div style={{
+                    marginTop: '16px',
+                    display: 'flex',
+                    gap: '12px',
+                    justifyContent: 'center'
+                  }}>
+                    <button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = generatedAiImage;
+                        link.download = `${currentFile?.name?.replace('.psd', '') || 'image'}_ai_variation.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>📥</span>
+                      <span>Baixar IA</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => setGeneratedAiImage(null)}
+                      style={{
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '8px 16px',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        fontWeight: '600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>🗑️</span>
+                      <span>Remover</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div style={{ 
                 marginTop: '2rem',
                 padding: '1.5rem',
@@ -1199,17 +1491,209 @@ function NewResultScreen() {
               </div>
               
               {result.imageElements.length > 0 ? (
-                <NoSSRWrapper>
-                  <div>
-                    {result.imageElements.map((element) => (
-                      <AdvancedImageEditor
-                        key={element.id}
-                        element={element}
-                        onUpdate={updateImageElement}
-                      />
-                    ))}
-                  </div>
-                </NoSSRWrapper>
+                <div>
+                  {result.imageElements.map((element) => (
+                    <div key={element.id} style={{
+                      backgroundColor: '#fff',
+                      border: '2px solid #f0f0f0',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      marginBottom: '16px',
+                      transition: 'all 0.3s ease'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '12px'
+                      }}>
+                        <h4 style={{
+                          margin: 0,
+                          color: '#1a1a1a',
+                          fontSize: '1.1rem',
+                          fontWeight: '600'
+                        }}>
+                          📷 {element.name || `Imagem #${element.id}`}
+                        </h4>
+                        <div style={{
+                          fontSize: '0.8rem',
+                          color: '#666',
+                          background: '#f3f4f6',
+                          padding: '4px 8px',
+                          borderRadius: '6px'
+                        }}>
+                          ID: {element.id}
+                        </div>
+                      </div>
+                      
+                      {/* Debug info */}
+                      <details style={{ marginBottom: '12px' }}>
+                        <summary style={{
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          marginBottom: '8px'
+                        }}>
+                          🔍 Debug Info
+                        </summary>
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          backgroundColor: '#f9fafb',
+                          padding: '8px',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace'
+                        }}>
+                          <div><strong>Type:</strong> {typeof element}</div>
+                          <div><strong>Fill:</strong> {element.fill ? JSON.stringify(element.fill).substring(0, 100) + '...' : 'undefined'}</div>
+                          <div><strong>ImageUrl:</strong> {element.imageUrl ? 'Presente' : 'Ausente'}</div>
+                          <div><strong>Visible:</strong> {element.visible ? 'true' : 'false'}</div>
+                          <div><strong>Width:</strong> {element.width || 'undefined'}</div>
+                          <div><strong>Height:</strong> {element.height || 'undefined'}</div>
+                          <div><strong>Properties:</strong> {Object.keys(element).join(', ')}</div>
+                        </div>
+                      </details>
+
+                      {/* Detectar se é realmente uma imagem ou shape */}
+                      {(!element.imageUrl && !element.fill?.imageFileURI) && (
+                        <div style={{
+                          backgroundColor: '#fef3c7',
+                          border: '1px solid #f59e0b',
+                          borderRadius: '6px',
+                          padding: '8px',
+                          marginBottom: '12px'
+                        }}>
+                          <div style={{
+                            fontSize: '0.8rem',
+                            color: '#92400e',
+                            fontWeight: '600',
+                            marginBottom: '4px'
+                          }}>
+                            ⚠️ Este elemento parece ser uma FORMA, não uma imagem
+                          </div>
+                          <div style={{
+                            fontSize: '0.75rem',
+                            color: '#b45309'
+                          }}>
+                            Elementos sem imageUrl ou imageFileURI são provavelmente shapes vetoriais que foram classificados incorretamente.
+                          </div>
+                          <button
+                            onClick={() => {
+                              console.log('Elemento classificado como shape:', element);
+                              showToast({
+                                type: 'info',
+                                title: '💡 Elemento identificado como forma',
+                                message: 'Este elemento deveria estar na aba "Formas" ao invés de "Imagens"'
+                              });
+                            }}
+                            style={{
+                              marginTop: '6px',
+                              padding: '4px 8px',
+                              fontSize: '0.75rem',
+                              backgroundColor: '#f59e0b',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📋 Log Details
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Upload de Imagem */}
+                      <div style={{
+                        border: '2px dashed #d1d5db',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        textAlign: 'center',
+                        marginBottom: '12px',
+                        background: uploadedImages[element.id] ? '#f0f9ff' : '#fafafa'
+                      }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(element.id, file);
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                          id={`upload-${element.id}`}
+                          disabled={uploadingImages.has(element.id)}
+                        />
+                        <label
+                          htmlFor={`upload-${element.id}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            backgroundColor: uploadingImages.has(element.id) 
+                              ? '#9ca3af' 
+                              : uploadedImages[element.id] 
+                                ? '#10b981'
+                                : '#3b82f6',
+                            color: 'white',
+                            borderRadius: '6px',
+                            cursor: uploadingImages.has(element.id) ? 'not-allowed' : 'pointer',
+                            fontSize: '0.875rem',
+                            fontWeight: '600',
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          <span>
+                            {uploadingImages.has(element.id) 
+                              ? '🔄' 
+                              : uploadedImages[element.id] 
+                                ? '✅'
+                                : '📤'}
+                          </span>
+                          <span>
+                            {uploadingImages.has(element.id) 
+                              ? 'Carregando...' 
+                              : uploadedImages[element.id] 
+                                ? 'Imagem Carregada'
+                                : 'Fazer Upload de Imagem'}
+                          </span>
+                        </label>
+                        
+                        {uploadedImages[element.id] && (
+                          <div style={{
+                            marginTop: '8px',
+                            fontSize: '0.75rem',
+                            color: '#059669'
+                          }}>
+                            ✅ Nova imagem será aplicada no elemento
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Controles adicionais usando AdvancedImageEditor */}
+                      <details style={{ marginTop: '12px' }}>
+                        <summary style={{
+                          cursor: 'pointer',
+                          fontSize: '0.875rem',
+                          fontWeight: '600',
+                          color: '#4b5563',
+                          padding: '4px 0'
+                        }}>
+                          ⚙️ Controles Avançados
+                        </summary>
+                        <div style={{ marginTop: '8px' }}>
+                          <NoSSRWrapper>
+                            <AdvancedImageEditor
+                              element={element}
+                              onUpdate={updateImageElement}
+                            />
+                          </NoSSRWrapper>
+                        </div>
+                      </details>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div style={{ 
                   textAlign: 'center', 
@@ -2013,6 +2497,151 @@ function NewResultScreen() {
                 regenerando automaticamente o preview da imagem.
               </p>
               
+              {/* Botão de Preview */}
+              <button
+                onClick={generateElementPreview}
+                disabled={!colorPalettes.length || selectedPaletteIndex === null}
+                style={{
+                  background: (!colorPalettes.length || selectedPaletteIndex === null)
+                    ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                    : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '10px 24px',
+                  cursor: (!colorPalettes.length || selectedPaletteIndex === null) ? 'not-allowed' : 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s ease',
+                  margin: '0 auto 16px auto',
+                  boxShadow: (!colorPalettes.length || selectedPaletteIndex === null) 
+                    ? 'none'
+                    : '0 4px 12px rgba(59, 130, 246, 0.4)'
+                }}
+                onMouseEnter={(e) => {
+                  if (colorPalettes.length && selectedPaletteIndex !== null) {
+                    e.currentTarget.style.transform = 'scale(1.05) translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.5)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (colorPalettes.length && selectedPaletteIndex !== null) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.4)';
+                  }
+                }}
+              >
+                <span>🔍</span>
+                <span>Ver Preview de Elementos</span>
+              </button>
+              
+              {/* Campo opcional para instruções adicionais */}
+              <div style={{ margin: '16px 0' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '8px'
+                }}>
+                  🎯 Instruções Adicionais para IA (Opcional)
+                </label>
+                <textarea
+                  value={aiPromptAddition}
+                  onChange={(e) => setAiPromptAddition(e.target.value)}
+                  placeholder="Ex: Manter gradientes suaves, usar tons mais vibrantes, preservar sombras..."
+                  style={{
+                    width: '100%',
+                    minHeight: '80px',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                    transition: 'border-color 0.2s ease',
+                    backgroundColor: '#fafafa'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.backgroundColor = '#ffffff';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e5e7eb';
+                    e.target.style.backgroundColor = '#fafafa';
+                  }}
+                />
+                <div style={{
+                  fontSize: '0.75rem',
+                  color: '#6b7280',
+                  marginTop: '4px'
+                }}>
+                  💡 A IA manterá textos e posições automaticamente. Use este campo para ajustes específicos.
+                </div>
+              </div>
+              
+              {/* Botão para gerar imagem com IA */}
+              <button
+                onClick={generateAiImage}
+                disabled={isGeneratingAiImage || !colorPalettes.length || selectedPaletteIndex === null}
+                style={{
+                  background: isGeneratingAiImage
+                    ? 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)'
+                    : (!colorPalettes.length || selectedPaletteIndex === null)
+                    ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+                    : 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 32px',
+                  cursor: (isGeneratingAiImage || !colorPalettes.length || selectedPaletteIndex === null)
+                    ? 'not-allowed'
+                    : 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 0.3s ease',
+                  margin: '0 auto 16px auto',
+                  boxShadow: (isGeneratingAiImage || !colorPalettes.length || selectedPaletteIndex === null)
+                    ? 'none'
+                    : '0 4px 12px rgba(139, 92, 246, 0.4)'
+                }}
+                onMouseEnter={(e) => {
+                  if (!(isGeneratingAiImage || !colorPalettes.length || selectedPaletteIndex === null)) {
+                    e.currentTarget.style.transform = 'scale(1.05) translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(139, 92, 246, 0.5)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!(isGeneratingAiImage || !colorPalettes.length || selectedPaletteIndex === null)) {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)';
+                  }
+                }}
+              >
+                <span style={{
+                  fontSize: '1.2rem',
+                  animation: isGeneratingAiImage ? 'spin 1s linear infinite' : 'none'
+                }}>
+                  {isGeneratingAiImage ? '🔄' : '✨'}
+                </span>
+                <span>
+                  {isGeneratingAiImage 
+                    ? 'Gerando com IA...' 
+                    : (!colorPalettes.length || selectedPaletteIndex === null)
+                    ? 'Selecione uma Paleta Primeiro'
+                    : 'Gerar Variação com IA'
+                  }
+                </span>
+              </button>
+
               <button
                 onClick={applyAiChanges}
                 disabled={isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null)}
@@ -2091,8 +2720,205 @@ function NewResultScreen() {
               fontSize: '0.875rem',
               color: '#1e40af'
             }}>
-              💡 <strong>Como usar:</strong> Clique em "Gerar IA" para criar um texto similar com palavras diferentes. 
-              Marque "Fixo" para proteger textos que não devem ser alterados. Selecione uma paleta de cores e clique em "Aplicar Mudanças IA no PSD" para finalizar.
+              💡 <strong>Como usar:</strong> Clique em "Gerar IA" para criar textos similares com palavras diferentes. 
+              Faça upload de imagens para substituir elementos. Selecione uma paleta de cores. 
+              Use "Gerar Variação com IA" para criar uma nova versão usando fal.ai ou "Aplicar Mudanças IA no PSD" para editar o original.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Preview de Elementos */}
+      {showElementPreview && (
+        <div style={{
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                color: '#1f2937',
+                margin: '0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🔍 Preview de Aplicação da Paleta
+              </h3>
+              <button
+                onClick={() => setShowElementPreview(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Elementos que SERÃO alterados */}
+            {previewData.willChange.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <h4 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#059669',
+                  margin: '0 0 12px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  ✅ Elementos que receberão cores ({previewData.willChange.length})
+                </h4>
+                <div style={{ 
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  border: '1px solid #d1fae5',
+                  borderRadius: '8px',
+                  padding: '12px'
+                }}>
+                  {previewData.willChange.map((item, index) => (
+                    <div key={index} style={{
+                      padding: '8px',
+                      marginBottom: '8px',
+                      backgroundColor: '#f0fdf4',
+                      borderRadius: '6px',
+                      borderLeft: '3px solid #22c55e'
+                    }}>
+                      <div style={{
+                        fontWeight: '600',
+                        color: '#16a34a',
+                        fontSize: '0.875rem'
+                      }}>
+                        {item.element.name || `${item.type} #${item.element.id}`}
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#4ade80',
+                        marginTop: '4px'
+                      }}>
+                        {item.reason}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Elementos que serão PRESERVADOS */}
+            {previewData.willSkip.length > 0 && (
+              <div style={{ marginBottom: '24px' }}>
+                <h4 style={{
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  color: '#dc2626',
+                  margin: '0 0 12px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  🛡️ Elementos preservados ({previewData.willSkip.length})
+                </h4>
+                <div style={{ 
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '12px'
+                }}>
+                  {previewData.willSkip.map((item, index) => (
+                    <div key={index} style={{
+                      padding: '8px',
+                      marginBottom: '8px',
+                      backgroundColor: '#fef2f2',
+                      borderRadius: '6px',
+                      borderLeft: '3px solid #ef4444'
+                    }}>
+                      <div style={{
+                        fontWeight: '600',
+                        color: '#dc2626',
+                        fontSize: '0.875rem'
+                      }}>
+                        {item.element.name || `${item.type} #${item.element.id}`}
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#f87171',
+                        marginTop: '4px'
+                      }}>
+                        {item.reason}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => setShowElementPreview(false)}
+                style={{
+                  background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600'
+                }}
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => {
+                  setShowElementPreview(false);
+                  applyAiChanges();
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 20px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '600'
+                }}
+              >
+                Aplicar Mesmo Assim
+              </button>
             </div>
           </div>
         </div>

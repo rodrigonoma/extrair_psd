@@ -8,7 +8,8 @@
       "Bash(dir:*)",
       "WebFetch(domain:docs.img.ly)",
       "Bash(move srccomponentsPropertyEditor.tsx srccomponentsPropertyEditorOld.tsx)",
-      "Bash(move srccomponentsPropertyEditorNew.tsx srccomponentsPropertyEditor.tsx)"
+      "Bash(move srccomponentsPropertyEditorNew.tsx srccomponentsPropertyEditor.tsx)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

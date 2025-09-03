@@ -1,3 +1,4 @@
 {
+  "/api/fonts/scan/route": "app/api/fonts/scan/route.js",
   "/page": "app/page.js"
 }
