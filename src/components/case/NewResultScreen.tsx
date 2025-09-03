@@ -53,7 +53,11 @@ function NewResultScreen() {
   const [uploadingImages, setUploadingImages] = useState<Set<number>>(new Set());
   const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
   const [generatedAiImage, setGeneratedAiImage] = useState<string | null>(null);
+  const [generatedAiImages, setGeneratedAiImages] = useState<string[]>([]);
   const [aiPromptAddition, setAiPromptAddition] = useState('');
+  const [isDetectingProfile, setIsDetectingProfile] = useState(false);
+  const [profileDetectedAutomatically, setProfileDetectedAutomatically] = useState(false);
+  const [generationStyle, setGenerationStyle] = useState<'conservador' | 'moderado' | 'radical'>('moderado');
   if (!result) return null;
 
   const { messages } = result;
@@ -64,14 +68,92 @@ function NewResultScreen() {
     .filter((m) => m.type === 'error')
     .map((m) => m.message);
 
+  // Função para detectar perfil do imóvel automaticamente
+  const detectPropertyProfile = async (textElements: any[]) => {
+    console.log('🔍 Detecting property profile from texts...');
+    setIsDetectingProfile(true);
+    
+    try {
+      // Extrair apenas os textos das camadas
+      const extractedTexts = textElements
+        .filter(element => element.text && element.text.trim() !== '')
+        .map(element => element.text.trim());
+      
+      console.log('📄 Extracted texts for profile detection:', extractedTexts);
+      
+      if (extractedTexts.length === 0) {
+        console.log('⚠️ No texts found for profile detection');
+        return null;
+      }
+
+      const response = await fetch('/api/ai-detect-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          texts: extractedTexts
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Profile detection API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        return null;
+      }
+
+      const data = await response.json();
+      console.log('🎯 Profile detection result:', data);
+      
+      if (data.success && data.profile && data.confidence >= 0.6) {
+        console.log(`✅ Profile detected: ${data.profile} (confidence: ${data.confidence})`);
+        return data.profile;
+      } else {
+        console.log('⚠️ Profile detection confidence too low or failed');
+        return null;
+      }
+      
+    } catch (error) {
+      console.error('❌ Error detecting profile:', error);
+      return null;
+    } finally {
+      setIsDetectingProfile(false);
+    }
+  };
+
   const handleAiReposition = async () => {
     console.log('AI Modal clicked');
     
     // Extrair apenas elementos de texto
     if (result.textElements && result.textElements.length > 0) {
       setTextElements(result.textElements);
+      
+      // Detectar perfil automaticamente antes de abrir o modal
+      showToast({ type: 'info', title: '🔍 Detectando perfil do imóvel...' });
+      const detectedProfile = await detectPropertyProfile(result.textElements);
+      
+      if (detectedProfile) {
+        setSelectedProfile(detectedProfile);
+        setProfileDetectedAutomatically(true);
+        showToast({ 
+          type: 'success', 
+          title: `🎯 Perfil ${detectedProfile.toUpperCase()} detectado automaticamente!`,
+          message: 'O perfil foi selecionado baseado na análise dos textos.'
+        });
+      } else {
+        setProfileDetectedAutomatically(false);
+        showToast({ 
+          type: 'info', 
+          title: '📝 Abrindo editor de textos IA...',
+          message: 'Não foi possível detectar o perfil automaticamente. Selecione manualmente.'
+        });
+      }
+      
       setShowAiModal(true);
-      showToast({ type: 'info', title: '📝 Abrindo editor de textos IA...' });
     } else {
       showToast({ type: 'warning', title: '⚠️ Nenhum elemento de texto encontrado no PSD.' });
     }
@@ -289,7 +371,8 @@ function NewResultScreen() {
           baseImageUrl: baseImageUrl,
           colors: selectedPalette.colors,
           paletteDescription: selectedPalette.description,
-          prompt: aiPromptAddition || 'Focus on precise color replacement while maintaining professional marketing quality.'
+          prompt: aiPromptAddition || 'Focus on precise color replacement while maintaining professional marketing quality.',
+          generationStyle: generationStyle
         })
       });
 
@@ -308,16 +391,18 @@ function NewResultScreen() {
       const data = await response.json();
       console.log('📦 Data recebido:', data);
       
-      if (data.success && data.imageUrl) {
-        setGeneratedAiImage(data.imageUrl);
+      if (data.success && (data.imageUrls || data.imageUrl)) {
+        const images = data.imageUrls || [data.imageUrl];
+        setGeneratedAiImages(images);
+        setGeneratedAiImage(images[0]); // Manter compatibilidade
         
         showToast({
           type: 'success',
-          title: '✨ Imagem gerada com sucesso!',
-          message: 'Nova variação criada com IA usando as cores da paleta selecionada'
+          title: '✨ Variações geradas com sucesso!',
+          message: `${images.length} variações criadas com IA usando as cores da paleta selecionada`
         });
         
-        console.log('✅ Imagem gerada com IA:', data.imageUrl);
+        console.log(`✅ ${images.length} imagens geradas com IA:`, images);
         console.log('💭 Reasoning:', data.reasoning);
       } else {
         throw new Error(data.error || 'Erro desconhecido na geração');
@@ -1211,8 +1296,8 @@ function NewResultScreen() {
                 />
               </div>
 
-              {/* Seção de Imagem Gerada com IA */}
-              {generatedAiImage && (
+              {/* Seção de Variações Geradas com IA */}
+              {generatedAiImages.length > 0 && (
                 <div style={{
                   marginTop: '2rem',
                   padding: '24px',
@@ -1229,29 +1314,86 @@ function NewResultScreen() {
                     alignItems: 'center',
                     gap: '8px'
                   }}>
-                    ✨ Variação Gerada com IA
+                    ✨ {generatedAiImages.length} Variações Geradas com IA
                   </h3>
                   
                   <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    display: 'grid',
+                    gridTemplateColumns: generatedAiImages.length === 1 ? '1fr' : 
+                                       generatedAiImages.length === 2 ? 'repeat(2, 1fr)' :
+                                       'repeat(auto-fit, minmax(280px, 1fr))',
+                    gap: '20px',
                     backgroundColor: '#ffffff',
                     borderRadius: '12px',
                     padding: '16px',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)'
                   }}>
-                    <img
-                      src={generatedAiImage}
-                      alt="Variação Gerada com IA"
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '600px',
-                        height: 'auto',
-                        borderRadius: '8px',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)'
-                      }}
-                    />
+                    {generatedAiImages.map((imageUrl, index) => (
+                      <div key={index} style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <div style={{
+                          position: 'relative',
+                          width: '100%'
+                        }}>
+                          <img
+                            src={imageUrl}
+                            alt={`Variação ${index + 1} Gerada com IA`}
+                            style={{
+                              width: '100%',
+                              height: 'auto',
+                              maxHeight: '300px',
+                              objectFit: 'contain',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.12)'
+                            }}
+                          />
+                          <div style={{
+                            position: 'absolute',
+                            top: '8px',
+                            left: '8px',
+                            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                            color: 'white',
+                            padding: '4px 8px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: '600'
+                          }}>
+                            Variação {index + 1}
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = imageUrl;
+                            link.download = `${currentFile?.name?.replace('.psd', '') || 'image'}_ai_variation_${index + 1}.png`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            width: 'fit-content'
+                          }}
+                        >
+                          Baixar
+                        </button>
+                      </div>
+                    ))}
                   </div>
                   
                   <div style={{
@@ -1262,33 +1404,9 @@ function NewResultScreen() {
                   }}>
                     <button
                       onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = generatedAiImage;
-                        link.download = `${currentFile?.name?.replace('.psd', '') || 'image'}_ai_variation.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                        setGeneratedAiImages([]);
+                        setGeneratedAiImage(null);
                       }}
-                      style={{
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '8px 16px',
-                        cursor: 'pointer',
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <span>📥</span>
-                      <span>Baixar IA</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => setGeneratedAiImage(null)}
                       style={{
                         background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                         color: 'white',
@@ -2099,7 +2217,17 @@ function NewResultScreen() {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                🏢 Perfil do Imóvel
+                {isDetectingProfile ? '🔍 Detectando Perfil...' : '🏢 Perfil do Imóvel'}
+                {isDetectingProfile && (
+                  <span style={{
+                    fontSize: '0.75rem',
+                    color: '#3b82f6',
+                    fontWeight: '400',
+                    marginLeft: '8px'
+                  }}>
+                    (analisando textos)
+                  </span>
+                )}
               </h3>
               
               <div style={{
@@ -2128,7 +2256,10 @@ function NewResultScreen() {
                       name="profile"
                       value={profile}
                       checked={selectedProfile === profile}
-                      onChange={(e) => setSelectedProfile(e.target.value as typeof profile)}
+                      onChange={(e) => {
+                        setSelectedProfile(e.target.value as typeof profile);
+                        setProfileDetectedAutomatically(false); // Reset automatic detection flag
+                      }}
                       style={{ margin: 0 }}
                     />
                     <span style={{ textTransform: 'capitalize' }}>
@@ -2136,6 +2267,79 @@ function NewResultScreen() {
                       {profile === 'medio' && '🏠'} 
                       {profile === 'alto' && '✨'} 
                       {profile} Padrão
+                      {selectedProfile === profile && profileDetectedAutomatically && (
+                        <span style={{
+                          fontSize: '0.7rem',
+                          color: '#10b981',
+                          fontWeight: '600',
+                          marginLeft: '4px',
+                          backgroundColor: '#d1fae5',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}>
+                          IA
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              {/* Seção de Estilo de Geração */}
+              <h3 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: '#1f2937',
+                margin: '24px 0 16px 0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                🎨 Estilo de Geração
+              </h3>
+              
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                marginBottom: '20px',
+                flexWrap: 'wrap'
+              }}>
+                {(['conservador', 'moderado', 'radical'] as const).map((style) => (
+                  <label key={style} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    border: '2px solid',
+                    borderColor: generationStyle === style ? '#8b5cf6' : '#e5e7eb',
+                    backgroundColor: generationStyle === style ? '#f3e8ff' : '#ffffff',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    minWidth: '120px'
+                  }}>
+                    <input
+                      type="radio"
+                      name="generationStyle"
+                      value={style}
+                      checked={generationStyle === style}
+                      onChange={(e) => setGenerationStyle(e.target.value as typeof style)}
+                      style={{ margin: 0 }}
+                    />
+                    <span style={{ textTransform: 'capitalize', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {style === 'conservador' && '🛡️'} 
+                        {style === 'moderado' && '⚖️'} 
+                        {style === 'radical' && '🔥'} 
+                        {style}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>
+                        {style === 'conservador' && 'Mudanças sutis'} 
+                        {style === 'moderado' && 'Equilibrio visual'} 
+                        {style === 'radical' && 'Transformação total'} 
+                      </span>
                     </span>
                   </label>
                 ))}
@@ -2646,6 +2850,7 @@ function NewResultScreen() {
                 onClick={applyAiChanges}
                 disabled={isApplyingChanges || (colorPalettes.length > 0 && selectedPaletteIndex === null)}
                 style={{
+                  display: 'none', // Hidden button
                   background: isApplyingChanges
                     ? 'linear-gradient(135deg, #9333ea 0%, #7c3aed 100%)'
                     : (colorPalettes.length > 0 && selectedPaletteIndex === null)
@@ -2660,7 +2865,6 @@ function NewResultScreen() {
                     : 'pointer',
                   fontSize: '1rem',
                   fontWeight: '600',
-                  display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
@@ -2722,7 +2926,7 @@ function NewResultScreen() {
             }}>
               💡 <strong>Como usar:</strong> Clique em "Gerar IA" para criar textos similares com palavras diferentes. 
               Faça upload de imagens para substituir elementos. Selecione uma paleta de cores. 
-              Use "Gerar Variação com IA" para criar uma nova versão usando fal.ai ou "Aplicar Mudanças IA no PSD" para editar o original.
+              Use "Gerar Variação com IA" para criar 3 novas versões com transformações visuais radicais.
             </div>
           </div>
         </div>

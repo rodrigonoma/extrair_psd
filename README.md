@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Extrator PSD - Editor de Design com IA
 
-## Getting Started
+Aplicação Next.js para processamento de arquivos PSD com funcionalidades de IA para geração de paletas de cores e variações de design.
 
-First, run the development server:
+## 🚀 Como Executar
 
+### Pré-requisitos
+- Node.js 18+ 
+- npm ou yarn
+
+### 1. Instalar Dependências
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configurar Variáveis de Ambiente
+1. Copie o arquivo `.env.example` para `.env`:
+```bash
+cp .env.example .env
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. Preencha as API keys necessárias no arquivo `.env`:
+- **OPENAI_API_KEY**: Para geração de paletas de cores e textos
+- **GOOGLE_API_KEY**: Para geração de imagens com Gemini 2.5 Flash
+- **FAL_API_KEY**: Para geração alternativa de imagens
+- **REPLICATE_API_TOKEN**: Para geração com SDXL
+- **NEXT_PUBLIC_LICENSE**: Licença do CE.SDK
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### 3. Executar o Projeto
+```bash
+npm run dev
+```
 
-## Learn More
+Acesse: `http://localhost:3000`
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠 Funcionalidades
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- ✅ Upload e processamento de arquivos PSD
+- ✅ Extração automática de elementos (imagens, formas, textos)
+- ✅ Geração de paletas de cores com IA
+- ✅ Aplicação inteligente de cores preservando gradientes/logos
+- ✅ Geração de variações de design com Gemini 2.5 Flash
+- ✅ Preview em tempo real das alterações
+- ✅ Upload e substituição de imagens
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+## 🔑 API Keys Necessárias
 
-## Deploy on Vercel
+| Serviço | Para que serve | Onde obter |
+|---------|----------------|------------|
+| OpenAI | Paletas de cores, textos | https://platform.openai.com/api-keys |
+| Google AI | Geração de imagens | https://ai.google.dev/ |
+| fal.ai | Geração alternativa | https://fal.ai/ |
+| Replicate | SDXL para imagens | https://replicate.com/ |
+| CE.SDK | Editor de design | https://img.ly/ |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Estrutura Principal
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```
+src/
+├── app/api/          # API routes (Next.js)
+├── components/case/  # Componentes principais
+└── lib/             # Utilitários
+```
+
+## 🐛 Solução de Problemas
+
+- **Erro de API key**: Verifique se todas as chaves estão configuradas no `.env`
+- **Erro de CORS**: Certifique-se que está rodando em `localhost:3000`
+- **Erro de dependências**: Execute `npm install --legacy-peer-deps` se necessário

@@ -6,11 +6,13 @@ interface GenerateImageRequest {
   colors: string[];
   paletteDescription: string;
   prompt?: string;
+  generationStyle?: 'conservador' | 'moderado' | 'radical';
 }
 
 interface GenerateImageResponse {
   success: boolean;
-  imageUrl?: string;
+  imageUrls?: string[]; // Changed to array for multiple images
+  imageUrl?: string; // Keep for backwards compatibility
   reasoning?: string;
   error?: string;
 }
@@ -20,13 +22,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<GenerateI
   
   try {
     console.log('📥 Parsing request body...');
-    const { baseImageUrl, colors, paletteDescription, prompt }: GenerateImageRequest = await request.json();
+    const { baseImageUrl, colors, paletteDescription, prompt, generationStyle = 'moderado' }: GenerateImageRequest = await request.json();
     
     console.log('✅ Request parsed successfully:', { 
       baseImageUrl: baseImageUrl?.substring(0, 50) + '...', 
       colors, 
       paletteDescription,
-      prompt: prompt?.substring(0, 50)
+      prompt: prompt?.substring(0, 50),
+      generationStyle
     });
     
     // Validate Google API key
@@ -71,21 +74,80 @@ Estilo: cores vivas e contrastantes, transmitindo energia e dinamismo.`;
 
     const patternPrompt = getPatternPrompt(paletteDescription, colors);
 
-    const enhancedPrompt = `Gere novas versões desta peça publicitária usando a imagem fornecida como base.
+    // Function to get style-specific instructions
+    const getStyleInstructions = (style: string) => {
+      switch (style) {
+        case 'conservador':
+          return {
+            intensity: 'CONSERVADOR e SUTIL',
+            instructions: [
+              '- Mudanças SUTIS e ELEGANTES nas cores',
+              '- Preservar TOTALMENTE o layout e composição original',
+              '- Aplicar cores com SUAVIDADE e naturalidade',
+              '- Manter harmonia visual DISCRETA',
+              '- Transformações REFINADAS e profissionais'
+            ],
+            variations: [
+              'CONSERVADOR: Aplicação suave da paleta mantendo elegância original',
+              'CONSERVADOR: Ajustes sutis de cor com máxima preservação do design',
+              'CONSERVADOR: Refinamento discreto das cores sem alterações dramáticas'
+            ]
+          };
+        case 'radical':
+          return {
+            intensity: 'EXTREMAMENTE RADICAL e TRANSFORMADOR',
+            instructions: [
+              '- Transformação TOTAL e REVOLUCIONÁRIA das cores',
+              '- Mudanças EXTREMAS e IMPACTANTES',
+              '- Usar cores com MÁXIMA INTENSIDADE e contraste',
+              '- Criar CHOQUE VISUAL impressionante',
+              '- Recomposição OUSADA e arriscada'
+            ],
+            variations: [
+              'RADICAL: Revolução completa das cores com impacto visual extremo',
+              'RADICAL: Transformação total criando atmosfera completamente nova',
+              'RADICAL: Redesign revolucionário com cores intensas e contrastantes'
+            ]
+          };
+        default: // moderado
+          return {
+            intensity: 'MODERADO e EQUILIBRADO',
+            instructions: [
+              '- Transformação PERCEPTÍVEL mas HARMONIOSA',
+              '- Equilibrio entre impacto visual e elegância',
+              '- Aplicar cores com INTENSIDADE MODERADA',
+              '- Mudanças VISÍVEIS mas profissionais',
+              '- Criar diferença CLARA da imagem original'
+            ],
+            variations: [
+              'MODERADO: Equilibrio entre mudança perceptível e elegância profissional',
+              'MODERADO: Transformação harmoniosa com impacto visual controlado',
+              'MODERADO: Aplicação balanceada das cores com resultado impactante'
+            ]
+          };
+      }
+    };
 
-Não altere o texto nem os valores apresentados.
+    const styleConfig = getStyleInstructions(generationStyle);
 
-Você pode mudar apenas cores e posicionamento dos elementos, respeitando a hierarquia visual.
+    const enhancedPrompt = `REDESIGN ${styleConfig.intensity} desta peça publicitária usando a imagem fornecida como base.
 
-Crie 1 variação de acordo com o padrão de imóvel e sua paleta:
+REGRAS OBRIGATÓRIAS:
+- Não altere o texto nem os valores apresentados
+- Mantenha a legibilidade de todos os elementos
+
+ESTILO DE TRANSFORMAÇÃO ${generationStyle.toUpperCase()}:
 
 ${patternPrompt}
 
+INSTRUÇÕES ESPECÍFICAS PARA ESTE ESTILO:
+${styleConfig.instructions.join('\n')}
+
 ${prompt ? `Instrução adicional: ${prompt}` : ''}
 
-Mantenha a qualidade profissional e a legibilidade de todos os elementos.`;
+RESULTADO ESPERADO: Variação que reflita perfeitamente o estilo ${generationStyle.toUpperCase()} escolhido.`;
 
-    console.log('🔄 Calling Google Gemini Flash Image Preview API...');
+    console.log('🔄 Calling Google Gemini Flash Image Preview API for 3 variations...');
     console.log('API Key configured:', !!googleApiKey);
     console.log('Base64 image size:', baseImageUrl.length);
     
@@ -98,40 +160,77 @@ Mantenha a qualidade profissional e a legibilidade de todos os elementos.`;
     const base64Data = baseImageUrl.replace(/^data:image\/[a-z]+;base64,/, '');
     const mimeType = baseImageUrl.match(/data:image\/([a-z]+);base64,/)?.[1] === 'png' ? 'image/png' : 'image/jpeg';
     
-    const parts: any[] = [{ text: enhancedPrompt }];
+    // Generate 3 variations based on selected style
+    const variations = styleConfig.variations;
 
-    // Add the base image for editing
-    parts.push({
-      inlineData: {
-        mimeType,
-        data: base64Data, // base64 puro
-      },
-    });
+    const generatedImageUrls: string[] = [];
 
-    console.log('🤖 Generating image with Gemini Flash Image Preview...');
-    console.log('Prompt:', enhancedPrompt.substring(0, 200) + '...');
+    console.log('🤖 Generating 3 variations with Gemini Flash Image Preview...');
 
-    const resp = await ai.models.generateContent({
-      model: "gemini-2.5-flash-image-preview",
-      contents: [{ role: "user", parts }],
-    });
+    for (let i = 0; i < 3; i++) {
+      console.log(`🔄 Generating variation ${i + 1}/3...`);
+      
+      const variationPrompt = `${enhancedPrompt}
 
-    // Get the first image returned
-    const candidate = resp.candidates?.[0];
-    const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+FOCO ESPECÍFICO PARA ESTILO ${generationStyle.toUpperCase()}: ${variations[i]}
 
-    if (!imagePart?.inlineData?.data) {
+INSTRUÇÕES EXTRAS PARA ESTE ESTILO:
+${styleConfig.instructions.join('\n')}
+
+Gere apenas 1 imagem seguindo EXATAMENTE o estilo ${generationStyle.toUpperCase()} especificado.`;
+
+      const parts: any[] = [{ text: variationPrompt }];
+
+      // Add the base image for editing
+      parts.push({
+        inlineData: {
+          mimeType,
+          data: base64Data,
+        },
+      });
+
+      try {
+        const resp = await ai.models.generateContent({
+          model: "gemini-2.5-flash-image-preview",
+          contents: [{ role: "user", parts }],
+        });
+
+        // Get the first image returned
+        const candidate = resp.candidates?.[0];
+        const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+
+        if (imagePart?.inlineData?.data) {
+          const variationImageUrl = `data:image/png;base64,${imagePart.inlineData.data}`;
+          generatedImageUrls.push(variationImageUrl);
+          console.log(`✅ Variation ${i + 1} generated successfully!`);
+        } else {
+          console.warn(`⚠️ No image generated for variation ${i + 1}`);
+          // Add the original image as fallback
+          generatedImageUrls.push(baseImageUrl);
+        }
+      } catch (error) {
+        console.error(`❌ Error generating variation ${i + 1}:`, error);
+        // Add the original image as fallback
+        generatedImageUrls.push(baseImageUrl);
+      }
+
+      // Add a small delay between calls to avoid rate limits
+      if (i < 2) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    if (generatedImageUrls.length === 0) {
       throw new Error("Nenhuma imagem gerada pelo Gemini.");
     }
 
-    console.log('✅ Image generated successfully by Gemini!');
-
-    const generatedImageUrl = `data:image/png;base64,${imagePart.inlineData.data}`;
+    console.log(`✅ Generated ${generatedImageUrls.length} variations successfully!`);
 
     return NextResponse.json({
       success: true,
-      imageUrl: generatedImageUrl,
-      reasoning: `Imagem gerada pelo Gemini 2.5 Flash Image Preview usando ${paletteDescription}. Cores aplicadas: ${colors.join(', ')}`
+      imageUrls: generatedImageUrls,
+      imageUrl: generatedImageUrls[0], // First variation for backwards compatibility
+      reasoning: `${generatedImageUrls.length} variações geradas pelo Gemini 2.5 Flash Image Preview no estilo ${generationStyle.toUpperCase()} usando ${paletteDescription}. Cores aplicadas: ${colors.join(', ')}`
     });
 
   } catch (error) {

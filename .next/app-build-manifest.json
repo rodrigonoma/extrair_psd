@@ -21,10 +21,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/ai-generate-image/route.js"
     ],
-    "/api/fonts/scan/route": [
+    "/api/ai-generate-text/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/fonts/scan/route.js"
+      "static/chunks/app/api/ai-generate-text/route.js"
+    ],
+    "/api/ai-detect-profile/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/ai-detect-profile/route.js"
+    ],
+    "/_not-found/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }
